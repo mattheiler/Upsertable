@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
@@ -95,7 +96,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         public IMerge ToMerge()
         {
             var target = Context.Db.Model.FindEntityType(typeof(T));
-            var loader = _loader ?? new SqlBulkCopyMergeSourceLoadStrategy(); // TODO Context.Db.GetService<IOptions<MergeOptions>>().Value.DefaultLoadStrategy;
+            var loader = _loader ?? Context.Db.GetService<IMergeSourceLoadStrategy>();
             var source = new MergeSource(Context.Db, target, loader);
             var output = new MergeOutput(Context.Db, target, target.GetColumns().OfType<IProperty>().Where(property => property.IsPrimaryKey()));
             var on = _on ?? MergeOn.SelectPrimaryKeys(target);

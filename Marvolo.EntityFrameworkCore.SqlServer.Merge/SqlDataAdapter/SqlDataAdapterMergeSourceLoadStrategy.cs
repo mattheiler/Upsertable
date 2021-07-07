@@ -8,6 +8,7 @@ using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
 {
@@ -15,14 +16,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
     {
         private readonly SqlDataAdapterMergeSourceLoadOptions _options;
 
-        public SqlDataAdapterMergeSourceLoadStrategy()
-            : this(new SqlDataAdapterMergeSourceLoadOptions())
+        public SqlDataAdapterMergeSourceLoadStrategy(IOptions<SqlDataAdapterMergeSourceLoadOptions> options)
         {
-        }
-
-        public SqlDataAdapterMergeSourceLoadStrategy(SqlDataAdapterMergeSourceLoadOptions _options)
-        {
-            this._options = _options;
+            _options = options.Value;
         }
 
         public async Task ExecuteAsync(IMergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)

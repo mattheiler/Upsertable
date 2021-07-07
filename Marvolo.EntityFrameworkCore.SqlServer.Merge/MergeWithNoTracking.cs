@@ -45,7 +45,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             await PostProcessAsync(cancellationToken);
         }
 
-        private Task PreProcessAsync(CancellationToken cancellationToken = default)
+        protected virtual Task PreProcessAsync(CancellationToken cancellationToken = default)
         {
             var entities = Context.Get(Target.ClrType);
             var navigations = Target.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && !navigation.DeclaringEntityType.IsOwned()).ToList();
@@ -66,28 +66,30 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return Task.CompletedTask;
         }
 
-        private async Task PostProcessAsync(CancellationToken cancellationToken = default)
+        protected virtual async Task PostProcessAsync(CancellationToken cancellationToken = default)
         {
-            var entities = Context.Get(Target.ClrType).Cast<object>().ToLookup(entity => On.Comparer.GetHashCode(On.GetValues(entity)));
-
-            var navigations = Target.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
             var key = Target.FindPrimaryKey();
             var properties = On.Properties.Union(key.Properties).ToList();
 
-            var raw = new object[properties.Count];
-            var values = new object[properties.Count];
-            var on = new object[On.Properties.Count];
-            var offset = properties.Count - key.Properties.Count;
+            // TODO the required order here is hidden... make it clearer
 
-            var text = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{Output.GetTableName()}] WHERE [{Output.GetActionName()}] IN ('INSERT', 'UPDATE')";
+            var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{Output.GetTableName()}] WHERE [{Output.GetActionName()}] IN ('INSERT', 'UPDATE')";
             var connection = (SqlConnection) Context.Db.Database.GetDbConnection();
             var transaction = (SqlTransaction) Context.Db.Database.CurrentTransaction?.GetDbTransaction();
 
-            await using var command = new SqlCommand(text, connection, transaction);
+            await using var command = new SqlCommand(statement, connection, transaction);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
             if (!reader.HasRows)
                 return;
+
+            var entities = Context.Get(Target.ClrType).Cast<object>().ToLookup(entity => On.Comparer.GetHashCode(On.GetValues(entity)));
+            var navigations = Target.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
+
+            var raw = new object[properties.Count];
+            var values = new object[properties.Count];
+            var offset = properties.Count - key.Properties.Count;
+            var on = new object[On.Properties.Count];
 
             while (await reader.ReadAsync(cancellationToken))
             {
