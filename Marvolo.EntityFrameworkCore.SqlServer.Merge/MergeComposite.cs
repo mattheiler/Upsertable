@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
@@ -37,7 +35,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public IMergeSource Source => throw new NotSupportedException("Unavailable in a composite merge.");
 
-        public IEntityType Target => throw new NotSupportedException("Unavailable in a composite merge.");
+        public IMergeTarget Target => throw new NotSupportedException("Unavailable in a composite merge.");
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {

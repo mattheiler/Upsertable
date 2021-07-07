@@ -10,18 +10,18 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions
 
         public MergeBehavior Behavior { get; }
 
-        public IMergeOn On { get; }
+        public IMergeOn On { get; } // properties & comparer... but the comparer should never change, although...
 
-        public IEntityType Target { get; }
+        public IMergeTarget Target { get; }
 
-        public IMergeSource Source { get; }
+        public IMergeSource Source { get; } // entity type, table name, and create table
 
-        public IMergeUpdate Update { get; }
+        public IMergeUpdate Update { get; } // properties
 
-        public IMergeInsert Insert { get; }
+        public IMergeInsert Insert { get; } // properties
 
-        public IMergeOutput Output { get; }
+        public IMergeOutput Output { get; } // entity type, table name, and create table... properties and action name
 
-        Task ExecuteAsync(CancellationToken cancellationToken = default);
+        Task ExecuteAsync(CancellationToken cancellationToken = default); // table dispose scope is broken
     }
 }

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
@@ -34,7 +33,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public IMergeSource Source => _merge.Source;
 
-        public IEntityType Target => _merge.Target;
+        public IMergeTarget Target => _merge.Target;
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
@@ -47,8 +46,8 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         protected virtual Task PreProcessAsync(CancellationToken cancellationToken = default)
         {
-            var entities = Context.Get(Target.ClrType);
-            var navigations = Target.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && !navigation.DeclaringEntityType.IsOwned()).ToList();
+            var entities = Context.Get(Target.EntityType.ClrType);
+            var navigations = Target.EntityType.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && !navigation.DeclaringEntityType.IsOwned()).ToList();
 
             foreach (var entity in entities)
             foreach (var navigation in navigations)
@@ -68,7 +67,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         protected virtual async Task PostProcessAsync(CancellationToken cancellationToken = default)
         {
-            var key = Target.FindPrimaryKey();
+            var key = Target.EntityType.FindPrimaryKey();
             var properties = On.Properties.Union(key.Properties).ToList();
 
             // TODO the required order here is hidden... make it clearer
@@ -83,8 +82,8 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             if (!reader.HasRows)
                 return;
 
-            var entities = Context.Get(Target.ClrType).Cast<object>().ToLookup(entity => On.Comparer.GetHashCode(On.GetValues(entity)));
-            var navigations = Target.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
+            var entities = Context.Get(Target.EntityType.ClrType).Cast<object>().ToLookup(entity => On.Comparer.GetHashCode(On.GetValues(entity)));
+            var navigations = Target.EntityType.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
 
             var raw = new object[properties.Count];
             var values = new object[properties.Count];

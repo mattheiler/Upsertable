@@ -7,7 +7,6 @@ using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
@@ -28,6 +27,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         }
 
         public MergeContext Context { get; }
+
+
+        public IEntityType EntityType => Context.Db.Model.FindEntityType(typeof(T));
 
         public MergeBuilder<T> On(IMergeOn on)
         {
@@ -59,7 +61,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
             build(builder);
 
-            var navigation = Context.Db.Model.FindEntityType(typeof(T)).FindNavigation(((MemberExpression)property.Body).Member);
+            var navigation = EntityType.FindNavigation(((MemberExpression)property.Body).Member);
             if (navigation.IsDependentToPrincipal())
                 _principals.Add(builder);
             else
@@ -76,7 +78,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
             build(builder);
 
-            var navigation = Context.Db.Model.FindEntityType(typeof(T)).FindNavigation(((MemberExpression)property.Body).Member);
+            var navigation = EntityType.FindNavigation(((MemberExpression)property.Body).Member);
             if (navigation.IsDependentToPrincipal())
                 _principals.Add(builder);
             else
@@ -95,13 +97,13 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public IMerge ToMerge()
         {
-            var target = Context.Db.Model.FindEntityType(typeof(T));
+            var target = new MergeTarget(EntityType);
             var loader = _loader ?? Context.Db.GetService<IMergeSourceLoadStrategy>();
-            var source = new MergeSource(Context.Db, target, loader);
-            var output = new MergeOutput(Context.Db, target, target.GetColumns().OfType<IProperty>().Where(property => property.IsPrimaryKey()));
-            var on = _on ?? MergeOn.SelectPrimaryKeys(target);
-            var insert = _insert ?? MergeInsert.SelectAll(target);
-            var update = _update ?? MergeUpdate.SelectAll(target);
+            var source = new MergeSource(Context.Db, EntityType, loader);
+            var output = new MergeOutput(Context.Db, EntityType, EntityType.GetColumns().OfType<IProperty>().Where(property => property.IsPrimaryKey()));
+            var on = _on ?? MergeOn.SelectPrimaryKeys(EntityType);
+            var insert = _insert ?? MergeInsert.SelectAll(EntityType);
+            var update = _update ?? MergeUpdate.SelectAll(EntityType);
 
             foreach (var entity in Context.Get(typeof(T)))
             foreach (var navigation in _navigations)

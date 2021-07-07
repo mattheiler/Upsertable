@@ -3,13 +3,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public sealed class Merge : IMerge
     {
-        public Merge(IEntityType target, IMergeSource source, IMergeOn on, MergeBehavior behavior, IMergeInsert insert, IMergeUpdate update, IMergeOutput output, MergeContext context)
+        public Merge(IMergeTarget target, IMergeSource source, IMergeOn on, MergeBehavior behavior, IMergeInsert insert, IMergeUpdate update, IMergeOutput output, MergeContext context)
         {
             Target = target;
             Source = source;
@@ -21,7 +20,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             Context = context;
         }
 
-        public IEntityType Target { get; }
+        public IMergeTarget Target { get; }
 
         public IMergeSource Source { get; }
 
@@ -46,7 +45,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             await using var source = await Source.CreateAsync(cancellationToken);
             await using var output = await Output.CreateAsync(cancellationToken);
 
-            await source.LoadAsync(Context.Get(Target.ClrType), cancellationToken);
+            await source.LoadAsync(Context.Get(Target.EntityType.ClrType), cancellationToken);
 
             var command = ToString();
 
@@ -56,7 +55,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         public MergeStatement GetStatement()
         {
             var statementFactory = new MergeStatementFactory();
-            var statement = statementFactory.CreateStatement(this, Target);
+            var statement = statementFactory.CreateStatement(this);
             return statement;
         }
 

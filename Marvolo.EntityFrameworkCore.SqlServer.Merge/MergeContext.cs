@@ -20,12 +20,17 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public void Add<T>(T entity)
         {
-            AddRange(typeof(T), new[] { entity });
+            AddRange(typeof(T), entity);
         }
 
         public void Add(Type type, object entity)
         {
-            AddRange(type, new[] { entity });
+            AddRange(type, entity);
+        }
+
+        public void AddRange<T>(params T[] entities)
+        {
+            AddRange(entities.OfType<T>());
         }
 
         public void AddRange<T>(IEnumerable<T> entities)
@@ -33,12 +38,22 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             AddRange(typeof(T), entities);
         }
 
+        public void AddRange(Type type, params object[] entities)
+        {
+            AddRange(type, entities.AsEnumerable());
+        }
+
         public void AddRange(Type type, IEnumerable entities)
         {
-            _entities.AddOrUpdate(type.Name, _ => new HashSet<object>(entities.Cast<object>()), (_, list) =>
+            AddRange(type, entities.Cast<object>());
+        }
+
+        public void AddRange(Type type, IEnumerable<object> entities)
+        {
+            _entities.AddOrUpdate(type.Name, _ => new List<object>(entities), (_, list) =>
             {
-                var set = (HashSet<object>) list;
-                foreach (var entity in entities) set.Add(entity);
+                var set = (List<object>) list;
+                set.AddRange(entities);
                 return list;
             });
         }

@@ -21,12 +21,12 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public static Type GetMergeProviderClrType(this IProperty property)
         {
-            return (Type)property[MergeAnnotations.ProviderClrType];
+            return (Type) property[MergeAnnotations.ProviderClrType];
         }
 
         public static ValueConverter GetMergeValueConverter(this IProperty property)
         {
-            return (ValueConverter)property[MergeAnnotations.ValueConverter];
+            return (ValueConverter) property[MergeAnnotations.ValueConverter];
         }
 
         public static PropertyBuilder<TProperty> HasMergeProviderClrType<TProperty>(this PropertyBuilder<TProperty> property, Type type)

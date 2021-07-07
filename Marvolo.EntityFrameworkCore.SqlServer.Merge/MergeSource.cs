@@ -20,6 +20,8 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public DbContext Context { get; }
 
+        public IMergeSourceLoadStrategy Loader { get; }
+
         public async Task<IMergeSourceTable> CreateAsync(CancellationToken cancellationToken = default)
         {
             var table = new MergeSourceTable(this, Loader);
@@ -28,8 +30,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         }
 
         public IEntityType EntityType { get; }
-
-        public IMergeSourceLoadStrategy Loader { get; }
 
         public string GetTableName()
         {

@@ -10,7 +10,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class MergeStatementFactory
     {
-        public MergeStatement CreateStatement(IMerge merge, IEntityType type)
+        public MergeStatement CreateStatement(IMerge merge)
         {
             var command = new StringBuilder();
 
@@ -19,7 +19,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                .AppendLine(";");
 
             command
-               .AppendLine($"MERGE [{type.GetTableName()}] AS [T]")
+               .AppendLine($"MERGE [{merge.Target.GetTableName()}] AS [T]")
                .AppendLine($"USING [{merge.Source.GetTableName()}] AS [S]");
 
             var conditions =
@@ -94,11 +94,13 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             if (merge.Output.Properties.Any())
             {
                 var columns =
-                    type
-                       .GetProperties()
-                       .Select(property => property.GetColumnName())
-                       .Select(column => $"ISNULL(DELETED.[{column}], INSERTED.[{column}]) AS [{column}]")
-                       .Append($"$action AS [{merge.Output.GetActionName()}]");
+                    merge
+                        .Target
+                        .EntityType
+                        .GetProperties()
+                        .Select(property => property.GetColumnName())
+                        .Select(column => $"ISNULL(DELETED.[{column}], INSERTED.[{column}]) AS [{column}]")
+                        .Append($"$action AS [{merge.Output.GetActionName()}]");
 
                 command.AppendLine($"OUTPUT {string.Join(", ", columns)} INTO [{merge.Output.GetTableName()}]");
             }
