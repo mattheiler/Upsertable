@@ -16,7 +16,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
             _options = options.Value;
         }
 
-        public async Task ExecuteAsync(IMergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(MergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             using var copy = new Microsoft.Data.SqlClient.SqlBulkCopy(connection, default, transaction)
             {

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -12,15 +14,15 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class MergeBuilder<T> : IMergeBuilder where T : class
     {
-        private readonly ICollection<IMergeBuilder> _dependents = new List<IMergeBuilder>();
         private readonly List<INavigation> _navigations = new List<INavigation>();
+        private readonly ICollection<IMergeBuilder> _dependents = new List<IMergeBuilder>();
         private readonly ICollection<IMergeBuilder> _principals = new List<IMergeBuilder>();
-        private MergeBehavior _behavior;
         private IEntityType _entityType;
-        private IMergeInsert _insert;
         private IMergeSourceLoader _loader;
-        private IMergeOn _on;
-        private IMergeUpdate _update;
+        private MergeOn _on;
+        private MergeBehavior _behavior;
+        private MergeInsert _insert;
+        private MergeUpdate _update;
 
         public MergeBuilder(MergeContext context)
         {
@@ -65,30 +67,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var merge = new Merge(target, source, on, _behavior, insert, update, output, Context);
 
             return new MergeComposite(principals.Append(merge).Concat(dependents));
-        }
-
-        public MergeBuilder<T> On(IMergeOn on)
-        {
-            _on = on;
-            return this;
-        }
-
-        public MergeBuilder<T> Insert(IMergeInsert insert)
-        {
-            _insert = insert;
-            return this;
-        }
-
-        public MergeBuilder<T> Update(IMergeUpdate update)
-        {
-            _update = update;
-            return this;
-        }
-
-        public MergeBuilder<T> Behavior(MergeBehavior behavior, bool enable = true)
-        {
-            _behavior = enable ? _behavior | behavior : _behavior & ~behavior;
-            return this;
         }
 
         public MergeBuilder<T> Include<TProperty>(Expression<Func<T, TProperty>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
@@ -143,6 +121,65 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         {
             _loader = loader;
             return this;
+        }
+
+        public MergeBuilder<T> On(MergeOn on)
+        {
+            _on = on;
+            return this;
+        }
+
+        public MergeBuilder<T> On<TProperty>(Expression<Func<T, TProperty>> on)
+        {
+            return On(new MergeOn(Context.Db.Model.FindEntityType(typeof(T)).GetColumns(on).Cast<IProperty>()));
+        }
+
+        public MergeBuilder<T> Behavior(MergeBehavior behavior, bool enable = true)
+        {
+            _behavior = enable ? _behavior | behavior : _behavior & ~behavior;
+            return this;
+        }
+
+        public MergeBuilder<T> Insert(MergeInsert insert)
+        {
+            _insert = insert;
+            return this;
+        }
+
+        public MergeBuilder<T> Insert()
+        {
+            return Behavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).Insert(new MergeInsert(Context.Db.Model.FindEntityType(typeof(T)).GetColumns()));
+        }
+
+        public MergeBuilder<T> Insert<TProperty>(Expression<Func<T, TProperty>> insert)
+        {
+            return Behavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).Insert(new MergeInsert(Context.Db.Model.FindEntityType(typeof(T)).GetColumns(insert)));
+        }
+
+        public MergeBuilder<T> Update(MergeUpdate update)
+        {
+            _update = update;
+            return this;
+        }
+
+        public MergeBuilder<T> Update()
+        {
+            return Behavior(MergeBehavior.WhenMatchedThenUpdate).Update(new MergeUpdate(Context.Db.Model.FindEntityType(typeof(T)).GetColumns()));
+        }
+
+        public MergeBuilder<T> Update<TProperty>(Expression<Func<T, TProperty>> update)
+        {
+            return Behavior(MergeBehavior.WhenMatchedThenUpdate).Update(new MergeUpdate(Context.Db.Model.FindEntityType(typeof(T)).GetColumns(update)));
+        }
+
+        public MergeBuilder<T> Delete()
+        {
+            return Behavior(MergeBehavior.WhenNotMatchedBySourceThenDelete);
+        }
+
+        public Task ExecuteAsync(CancellationToken cancellationToken = default)
+        {
+            return ToMerge().ExecuteAsync(cancellationToken);
         }
     }
 }

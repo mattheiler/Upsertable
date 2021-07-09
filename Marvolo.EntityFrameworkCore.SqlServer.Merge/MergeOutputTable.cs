@@ -1,12 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public class MergeOutputTable : IMergeOutputTable
+    public class MergeOutputTable : IAsyncDisposable
     {
         private readonly MergeOutput _output;
 

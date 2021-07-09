@@ -7,6 +7,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions
 {
     public interface IMergeSourceLoader
     {
-        Task ExecuteAsync(IMergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default);
+        Task ExecuteAsync(MergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default);
     }
 }

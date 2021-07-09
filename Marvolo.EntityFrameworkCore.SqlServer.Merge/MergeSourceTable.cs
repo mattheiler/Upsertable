@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public class MergeSourceTable : IMergeSourceTable
+    public class MergeSourceTable : IAsyncDisposable
     {
         private readonly IMergeSourceLoader _loader;
         private readonly MergeSource _source;

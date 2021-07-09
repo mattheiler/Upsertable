@@ -16,7 +16,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class Merge : IMerge
     {
-        public Merge(IMergeTarget target, IMergeSource source, IMergeOn on, MergeBehavior behavior, IMergeInsert insert, IMergeUpdate update, IMergeOutput output, MergeContext context)
+        public Merge(MergeTarget target, MergeSource source, MergeOn on, MergeBehavior behavior, MergeInsert insert, MergeUpdate update, MergeOutput output, MergeContext context)
         {
             Target = target;
             Source = source;
@@ -28,19 +28,19 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             Context = context;
         }
 
-        public IMergeTarget Target { get; }
+        public MergeTarget Target { get; }
 
-        public IMergeSource Source { get; }
+        public MergeSource Source { get; }
 
-        public IMergeOn On { get; }
+        public MergeOn On { get; }
 
         public MergeBehavior Behavior { get; }
 
-        public IMergeInsert Insert { get; }
+        public MergeInsert Insert { get; }
 
-        public IMergeUpdate Update { get; }
+        public MergeUpdate Update { get; }
 
-        public IMergeOutput Output { get; }
+        public MergeOutput Output { get; }
 
         public MergeContext Context { get; }
 

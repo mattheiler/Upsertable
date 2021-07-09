@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public static class MergeColumn
+    internal static class MergeExtensionsInternal
     {
         public static IEnumerable<IPropertyBase> GetColumns(this IEntityType @this)
         {

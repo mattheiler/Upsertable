@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public class MergeOutput : IMergeOutput
+    public class MergeOutput
     {
         private readonly string _action = "__ACTION__";
         private readonly string _table = "#OUTPUT_" + Guid.NewGuid().ToString().Replace('-', '_');
@@ -37,7 +36,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return _action;
         }
 
-        public async Task<IMergeOutputTable> CreateAsync(CancellationToken cancellationToken = default)
+        public async Task<MergeOutputTable> CreateAsync(CancellationToken cancellationToken = default)
         {
             var table = new MergeOutputTable(this);
             await table.CreateAsync(cancellationToken);

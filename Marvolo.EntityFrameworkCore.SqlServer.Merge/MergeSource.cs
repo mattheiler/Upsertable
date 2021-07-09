@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public class MergeSource : IMergeSource
+    public class MergeSource
     {
         private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
 
@@ -22,14 +22,14 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public IMergeSourceLoader Loader { get; }
 
-        public async Task<IMergeSourceTable> CreateAsync(CancellationToken cancellationToken = default)
+        public IEntityType EntityType { get; }
+
+        public async Task<MergeSourceTable> CreateAsync(CancellationToken cancellationToken = default)
         {
             var table = new MergeSourceTable(this, Loader);
             await table.CreateAsync(cancellationToken);
             return table;
         }
-
-        public IEntityType EntityType { get; }
 
         public string GetTableName()
         {

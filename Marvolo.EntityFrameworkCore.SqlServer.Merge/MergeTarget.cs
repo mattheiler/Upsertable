@@ -1,10 +1,9 @@
-﻿using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public class MergeTarget : IMergeTarget
+    public class MergeTarget
     {
         public MergeTarget(IEntityType entityType)
         {
