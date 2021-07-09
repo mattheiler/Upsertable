@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 
-namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions
+namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public interface IMergeSourceLoader
     {

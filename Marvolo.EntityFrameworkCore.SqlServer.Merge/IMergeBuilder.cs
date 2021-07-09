@@ -1,4 +1,4 @@
-﻿namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions
+﻿namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public interface IMergeBuilder
     {

@@ -1,7 +1,6 @@
 ﻿using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 

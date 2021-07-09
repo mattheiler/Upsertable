@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions
+namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public interface IMerge
     {
