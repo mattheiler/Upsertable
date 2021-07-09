@@ -7,11 +7,11 @@ using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
 {
-    public class SqlBulkCopyMergeSourceLoadStrategy : IMergeSourceLoadStrategy
+    public class SqlBulkCopyMergeSourceLoader : IMergeSourceLoader
     {
-        private readonly SqlBulkCopyMergeSourceLoadOptions _options;
+        private readonly SqlBulkCopyMergeSourceLoaderOptions _options;
 
-        public SqlBulkCopyMergeSourceLoadStrategy(IOptions<SqlBulkCopyMergeSourceLoadOptions> options)
+        public SqlBulkCopyMergeSourceLoader(IOptions<SqlBulkCopyMergeSourceLoaderOptions> options)
         {
             _options = options.Value;
         }

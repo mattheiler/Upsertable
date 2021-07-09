@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -9,16 +7,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public static class MergeExtensions
     {
-        internal static IMerge ToComposite(this IEnumerable<IMerge> @this)
-        {
-            return new MergeComposite(@this);
-        }
-
-        internal static IMerge WithNoTracking(this IMerge @this)
-        {
-            return new MergeWithNoTracking(@this);
-        }
-
         public static Type GetMergeProviderClrType(this IProperty property)
         {
             return (Type) property[MergeAnnotations.ProviderClrType];

@@ -5,8 +5,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions
 {
     public interface IMergeOn
     {
-        IEqualityComparer<object[]> Comparer { get; }
-
         IReadOnlyList<IProperty> Properties { get; }
     }
 }

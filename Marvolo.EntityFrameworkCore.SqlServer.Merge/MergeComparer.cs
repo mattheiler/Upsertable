@@ -4,14 +4,8 @@ using System.Linq;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    internal class MergeOnEqualityComparer : EqualityComparer<object[]>
+    internal class MergeComparer : EqualityComparer<object[]>
     {
-        public static readonly MergeOnEqualityComparer Instance = new MergeOnEqualityComparer();
-
-        private MergeOnEqualityComparer()
-        {
-        }
-
         public override bool Equals(object[] x, object[] y)
         {
             if (x == null && y == null)

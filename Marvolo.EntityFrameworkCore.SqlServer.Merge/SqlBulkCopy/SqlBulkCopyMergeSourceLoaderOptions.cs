@@ -1,6 +1,6 @@
 ﻿namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
 {
-    public class SqlBulkCopyMergeSourceLoadOptions
+    public class SqlBulkCopyMergeSourceLoaderOptions
     {
         public int BulkCopyTimeout { get; set; } = 30;
 

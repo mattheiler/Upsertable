@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions
 {
-    public interface IMergeSourceLoadStrategy
+    public interface IMergeSourceLoader
     {
         Task ExecuteAsync(IMergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default);
     }

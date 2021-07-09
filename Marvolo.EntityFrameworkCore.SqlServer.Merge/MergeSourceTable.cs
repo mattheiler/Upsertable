@@ -15,10 +15,10 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class MergeSourceTable : IMergeSourceTable
     {
-        private readonly IMergeSourceLoadStrategy _loader;
+        private readonly IMergeSourceLoader _loader;
         private readonly MergeSource _source;
 
-        public MergeSourceTable(MergeSource source, IMergeSourceLoadStrategy loader)
+        public MergeSourceTable(MergeSource source, IMergeSourceLoader loader)
         {
             _source = source;
             _loader = loader;
@@ -36,7 +36,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public ValueTask DisposeAsync()
         {
-            return default;
+            return DropAsync();
         }
 
         internal async Task CreateAsync(CancellationToken cancellationToken = default)
@@ -44,7 +44,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var columns = new List<string>();
 
             foreach (var column in _source.EntityType.GetColumns())
-            {
                 switch (column)
                 {
                     case IProperty property:
@@ -56,14 +55,13 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                     default:
                         throw new NotSupportedException("Property or navigation type not supported.");
                 }
-            }
 
             var command = $"CREATE TABLE {_source.GetTableName()} ({string.Join(", ", columns)})";
 
             await _source.Context.Database.ExecuteSqlRawAsync(command, cancellationToken);
         }
 
-        internal async Task DropAsync()
+        private async ValueTask DropAsync()
         {
             await _source.Context.Database.ExecuteSqlRawAsync($"DROP TABLE {_source.GetTableName()}");
         }
@@ -74,26 +72,24 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var members = type.GetColumns().ToList();
 
             foreach (var member in members)
-            {
                 switch (member)
                 {
                     case IProperty property:
                         table.Columns.Add(GetDataColumn(property));
                         break;
                     case INavigation navigation:
-                        foreach (var property in navigation.GetColumns()) table.Columns.Add(GetDataColumn(property));
+                        foreach (var property in navigation.GetColumns())
+                            table.Columns.Add(GetDataColumn(property));
                         break;
                     default:
                         throw new NotSupportedException("Property or navigation type not supported.");
                 }
-            }
 
             foreach (var entity in entities)
             {
                 var row = table.NewRow();
 
                 foreach (var member in members)
-                {
                     switch (member)
                     {
                         case IProperty property:
@@ -101,12 +97,12 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                             break;
                         case INavigation navigation:
                             var value = navigation.GetGetter().GetClrValue(entity);
-                            foreach (var property in navigation.GetColumns()) row[property.GetColumnName()] = GetData(property, value);
+                            foreach (var property in navigation.GetColumns())
+                                row[property.GetColumnName()] = GetData(property, value);
                             break;
                         default:
                             throw new NotSupportedException("Property or navigation type not supported.");
                     }
-                }
 
                 table.Rows.Add(row);
             }

@@ -11,7 +11,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
     {
         private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-        public MergeSource(DbContext context, IEntityType entityType, IMergeSourceLoadStrategy loader)
+        public MergeSource(DbContext context, IEntityType entityType, IMergeSourceLoader loader)
         {
             Context = context;
             EntityType = entityType;
@@ -20,7 +20,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public DbContext Context { get; }
 
-        public IMergeSourceLoadStrategy Loader { get; }
+        public IMergeSourceLoader Loader { get; }
 
         public async Task<IMergeSourceTable> CreateAsync(CancellationToken cancellationToken = default)
         {

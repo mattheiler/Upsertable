@@ -12,11 +12,11 @@ using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
 {
-    public class SqlDataAdapterMergeSourceLoadStrategy : IMergeSourceLoadStrategy
+    public class SqlDataAdapterMergeSourceLoader : IMergeSourceLoader
     {
-        private readonly SqlDataAdapterMergeSourceLoadOptions _options;
+        private readonly SqlDataAdapterMergeSourceLoaderOptions _options;
 
-        public SqlDataAdapterMergeSourceLoadStrategy(IOptions<SqlDataAdapterMergeSourceLoadOptions> options)
+        public SqlDataAdapterMergeSourceLoader(IOptions<SqlDataAdapterMergeSourceLoaderOptions> options)
         {
             _options = options.Value;
         }
