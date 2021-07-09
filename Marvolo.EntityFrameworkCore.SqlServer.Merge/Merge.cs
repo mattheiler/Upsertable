@@ -15,7 +15,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class Merge : IMerge
     {
-        public Merge(MergeTarget target, MergeSource source, MergeOn on, MergeBehavior behavior, MergeInsert insert, MergeUpdate update, MergeOutput output, MergeContext context)
+        public Merge(MergeTarget target, MergeSource source, MergeOn on, MergeBehavior behavior, MergeInsert insert, MergeUpdate update, MergeOutput output)
         {
             Target = target;
             Source = source;
@@ -24,7 +24,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             Insert = insert;
             Update = update;
             Output = output;
-            Context = context;
         }
 
         public MergeTarget Target { get; }
@@ -41,29 +40,27 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public MergeOutput Output { get; }
 
-        public MergeContext Context { get; }
-
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(MergeContext context, CancellationToken cancellationToken = default)
         {
-            var connection = Context.Db.Database.GetDbConnection();
+            var connection = context.Db.Database.GetDbConnection();
             if (connection.State == ConnectionState.Closed)
                 await connection.OpenAsync(cancellationToken);
 
             await using var source = await Source.CreateAsync(cancellationToken);
             await using var output = await Output.CreateAsync(cancellationToken);
 
-            await source.LoadAsync(Context.Get(Target.EntityType.ClrType), cancellationToken);
+            await source.LoadAsync(context.Get(Target.EntityType.ClrType), cancellationToken);
 
-            await PreProcessAsync(cancellationToken);
+            await PreProcessAsync(context,cancellationToken);
 
-            await Context.Db.Database.ExecuteSqlRawAsync(ToString(), cancellationToken);
+            await context.Db.Database.ExecuteSqlRawAsync(ToString(), cancellationToken);
 
-            await PostProcessAsync(cancellationToken);
+            await PostProcessAsync(context, cancellationToken);
         }
 
-        protected virtual Task PreProcessAsync(CancellationToken cancellationToken = default)
+        protected virtual Task PreProcessAsync(MergeContext context, CancellationToken cancellationToken = default)
         {
-            var entities = Context.Get(Target.EntityType.ClrType);
+            var entities = context.Get(Target.EntityType.ClrType);
             var navigations = Target.EntityType.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && !navigation.DeclaringEntityType.IsOwned()).ToList();
 
             foreach (var entity in entities)
@@ -82,14 +79,14 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return Task.CompletedTask;
         }
 
-        protected virtual async Task PostProcessAsync(CancellationToken cancellationToken = default)
+        protected virtual async Task PostProcessAsync(MergeContext context, CancellationToken cancellationToken = default)
         {
             var key = Target.EntityType.FindPrimaryKey();
             var properties = On.Properties.OrderBy(property => property.IsPrimaryKey()).Union(key.Properties).ToList();
 
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{Output.GetTableName()}] WHERE [{Output.GetActionName()}] IN ('INSERT', 'UPDATE')";
-            var connection = (SqlConnection) Context.Db.Database.GetDbConnection();
-            var transaction = (SqlTransaction) Context.Db.Database.CurrentTransaction?.GetDbTransaction();
+            var connection = (SqlConnection) context.Db.Database.GetDbConnection();
+            var transaction = (SqlTransaction) context.Db.Database.CurrentTransaction?.GetDbTransaction();
 
             await using var command = new SqlCommand(statement, connection, transaction);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -98,7 +95,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 return;
 
             var comparer = new MergeComparer();
-            var entities = Context.Get(Target.EntityType.ClrType).Cast<object>().ToLookup(entity => comparer.GetHashCode(properties.Select(property => property.GetGetter().GetClrValue(entity)).ToArray()));
+            var entities = context.Get(Target.EntityType.ClrType).Cast<object>().ToLookup(entity => comparer.GetHashCode(properties.Select(property => property.GetGetter().GetClrValue(entity)).ToArray()));
             var navigations = Target.EntityType.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
 
             var raw = new object[properties.Count];

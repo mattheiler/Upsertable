@@ -5,6 +5,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public interface IMerge
     {
-        Task ExecuteAsync(CancellationToken cancellationToken = default);
+        Task ExecuteAsync(MergeContext context, CancellationToken cancellationToken = default);
     }
 }

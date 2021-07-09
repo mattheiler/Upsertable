@@ -36,21 +36,21 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests
                     .On(foo => foo.Code)
                     .Insert()
                     .Update(foo => foo.Name)
-                    .IncludeMany(foo => foo.Fubs, fubs =>
+                    .Merge(foo => foo.Fubs, fubs =>
                     {
                         fubs
                             .Insert()
-                            .Include(fub => fub.Baz, bazs =>
+                            .Merge(fub => fub.Baz, bazs =>
                             {
                                 bazs
                                     .On(baz => baz.Code)
                                     .Insert()
-                                    .Include(baz => baz.Qux, quxs =>
+                                    .Merge(baz => baz.Qux, quxs =>
                                     {
                                         quxs
                                             .On(fum => fum.Code)
                                             .Insert()
-                                            .IncludeMany(qux => qux.Fums, fums =>
+                                            .Merge(qux => qux.Fums, fums =>
                                             {
                                                 fums
                                                     .On(fum => fum.Code)
@@ -59,13 +59,13 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests
                                     });
                             });
                     })
-                    .IncludeMany(foo => foo.Acks, acks =>
+                    .Merge(foo => foo.Acks, acks =>
                     {
                         acks
                             .On(bar => bar.Code)
                             .Insert()
                             .Update(ack => ack.Name)
-                            .Include(ack => ack.Bar, bars =>
+                            .Merge(ack => ack.Bar, bars =>
                             {
                                 bars
                                     .On(bar => bar.Code)

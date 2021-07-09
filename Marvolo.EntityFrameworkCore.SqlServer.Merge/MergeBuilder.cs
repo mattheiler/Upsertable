@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -13,14 +14,14 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class MergeBuilder<T> : IMergeBuilder where T : class
     {
+        private readonly ICollection<IMerge> _dependents = new List<IMerge>();
         private readonly List<INavigation> _navigations = new List<INavigation>();
-        private readonly ICollection<IMergeBuilder> _dependents = new List<IMergeBuilder>();
-        private readonly ICollection<IMergeBuilder> _principals = new List<IMergeBuilder>();
+        private readonly ICollection<IMerge> _principals = new List<IMerge>();
+        private MergeBehavior _behavior;
         private IEntityType _entityType;
+        private MergeInsert _insert;
         private IMergeSourceLoader _loader;
         private MergeOn _on;
-        private MergeBehavior _behavior;
-        private MergeInsert _insert;
         private MergeUpdate _update;
 
         public MergeBuilder(MergeContext context)
@@ -42,78 +43,46 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var insert = _insert ?? new MergeInsert(EntityType.GetColumns());
             var update = _update ?? new MergeUpdate(EntityType.GetColumns());
 
-            foreach (var entity in Context.Get(typeof(T)))
-            foreach (var navigation in _navigations)
-            {
-                var type =
-                    navigation.IsDependentToPrincipal()
-                        ? navigation.ForeignKey.PrincipalKey.DeclaringEntityType.ClrType
-                        : navigation.ForeignKey.DeclaringEntityType.ClrType;
-
-                var value = navigation.GetGetter().GetClrValue(entity);
-                if (value == null)
-                    continue;
-
-                if (navigation.IsCollection())
-                    Context.AddRange(type, (IEnumerable) value);
-                else
-                    Context.Add(type, value);
-            }
-
-            var principals = _principals.Select(principal => principal.ToMerge()).ToList();
-            var dependents = _dependents.Select(dependent => dependent.ToMerge()).ToList();
-
-            var merge = new Merge(target, source, on, _behavior, insert, update, output, Context);
-
-            return new MergeComposite(principals.Append(merge).Concat(dependents));
+            return new MergeComposite(_principals.Append(new Merge(target, source, on, _behavior, insert, update, output)).Concat(_dependents));
         }
 
-        public MergeBuilder<T> Include<TProperty>(Expression<Func<T, TProperty>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
+        public MergeBuilder<T> Merge<TProperty>(MemberInfo property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
-            var member = property.Body as MemberExpression;
-            if (member == null)
-                throw new ArgumentException("Expression body must describe a navigation property.");
-
-            var navigation = EntityType.FindNavigation(member.Member);
+            var navigation = EntityType.FindNavigation(property);
             if (navigation == null)
                 throw new ArgumentException("Expression body must describe a navigation property.");
-
-            _navigations.Add(navigation);
 
             var builder = new MergeBuilder<TProperty>(Context);
 
             build(builder);
 
             if (navigation.IsDependentToPrincipal())
-                _principals.Add(builder);
+                _principals.Add(builder.ToMerge());
             else
-                _dependents.Add(builder);
+                _dependents.Add(builder.ToMerge());
+
+            _navigations.Add(navigation);
 
             return this;
         }
 
-        public MergeBuilder<T> IncludeMany<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
+        public MergeBuilder<T> Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
-            var member = property.Body as MemberExpression;
-            if (member == null)
+            var body = property.Body as MemberExpression;
+            if (body == null)
                 throw new ArgumentException("Expression body must describe a navigation property.");
 
-            var navigation = EntityType.FindNavigation(member.Member);
-            if (navigation == null)
-                throw new ArgumentException("Expression body must describe a navigation property.");
+            return Merge(body.Member, build);
+        }
 
-            _navigations.Add(navigation);
+        public MergeBuilder<T> Merge<TProperty>(Expression<Func<T, TProperty>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
+        {
+            return Merge((LambdaExpression) property, build);
+        }
 
-            var builder = new MergeBuilder<TProperty>(Context);
-
-            build(builder);
-
-            if (navigation.IsDependentToPrincipal())
-                _principals.Add(builder);
-            else
-                _dependents.Add(builder);
-
-            return this;
+        public MergeBuilder<T> Merge<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
+        {
+            return Merge((LambdaExpression) property, build);
         }
 
         public MergeBuilder<T> Using(IMergeSourceLoader loader)
@@ -178,7 +147,25 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            return ToMerge().ExecuteAsync(cancellationToken);
+            foreach (var entity in Context.Get(typeof(T)))
+            foreach (var navigation in _navigations)
+            {
+                var type =
+                    navigation.IsDependentToPrincipal()
+                        ? navigation.ForeignKey.PrincipalKey.DeclaringEntityType.ClrType
+                        : navigation.ForeignKey.DeclaringEntityType.ClrType;
+
+                var value = navigation.GetGetter().GetClrValue(entity);
+                if (value == null)
+                    continue;
+
+                if (navigation.IsCollection())
+                    Context.AddRange(type, (IEnumerable) value);
+                else
+                    Context.Add(type, value);
+            }
+
+            return ToMerge().ExecuteAsync(Context, cancellationToken);
         }
     }
 }
