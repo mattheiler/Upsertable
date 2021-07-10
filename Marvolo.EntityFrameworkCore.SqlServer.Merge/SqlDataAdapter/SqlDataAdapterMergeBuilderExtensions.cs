@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
 {
@@ -9,7 +8,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
         {
             var options = new SqlDataAdapterMergeSourceLoaderOptions();
             configure?.Invoke(options);
-            return @this.Using(new SqlDataAdapterMergeSourceLoader(Options.Create(options)));
+            return @this.Using(new SqlDataAdapterMergeSourceLoader(options));
         }
     }
 }

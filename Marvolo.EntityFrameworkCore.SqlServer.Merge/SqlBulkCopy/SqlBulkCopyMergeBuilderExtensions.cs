@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
 {
@@ -9,7 +8,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
         {
             var options = new SqlBulkCopyMergeSourceLoaderOptions();
             configure?.Invoke(options);
-            return @this.Using(new SqlBulkCopyMergeSourceLoader(Options.Create(options)));
+            return @this.Using(new SqlBulkCopyMergeSourceLoader(options));
         }
     }
 }

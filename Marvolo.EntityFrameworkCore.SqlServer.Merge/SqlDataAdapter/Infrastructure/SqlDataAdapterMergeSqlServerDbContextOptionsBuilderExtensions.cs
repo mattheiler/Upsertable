@@ -1,7 +1,6 @@
 ﻿using System;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter.Infrastructure
 {
@@ -23,7 +22,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter.Infrastruct
             {
                 var options = new SqlDataAdapterMergeSourceLoaderOptions();
                 configure?.Invoke(options);
-                return new SqlDataAdapterMergeSourceLoader(Options.Create(options));
+                return new SqlDataAdapterMergeSourceLoader(options);
             };
         }
     }

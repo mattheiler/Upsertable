@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
 {
@@ -10,9 +9,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
     {
         private readonly SqlBulkCopyMergeSourceLoaderOptions _options;
 
-        public SqlBulkCopyMergeSourceLoader(IOptions<SqlBulkCopyMergeSourceLoaderOptions> options)
+        public SqlBulkCopyMergeSourceLoader(SqlBulkCopyMergeSourceLoaderOptions options)
         {
-            _options = options.Value;
+            _options = options;
         }
 
         public async Task ExecuteAsync(MergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)

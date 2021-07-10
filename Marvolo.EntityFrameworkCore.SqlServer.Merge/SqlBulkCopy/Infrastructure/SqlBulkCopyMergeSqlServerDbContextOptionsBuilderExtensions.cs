@@ -1,7 +1,6 @@
 ﻿using System;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy.Infrastructure
 {
@@ -23,7 +22,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy.Infrastructure
             {
                 var options = new SqlBulkCopyMergeSourceLoaderOptions();
                 configure?.Invoke(options);
-                return new SqlBulkCopyMergeSourceLoader(Options.Create(options));
+                return new SqlBulkCopyMergeSourceLoader(options);
             };
         }
     }
