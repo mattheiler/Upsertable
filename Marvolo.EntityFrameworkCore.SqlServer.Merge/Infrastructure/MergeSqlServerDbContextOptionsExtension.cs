@@ -25,11 +25,12 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
 
         public void ApplyServices(IServiceCollection services)
         {
-            if (_loader != null) services.Add(_loader);
+            services.Add(_loader);
         }
 
         public void Validate(IDbContextOptions options)
         {
+            if (_loader != null) throw new InvalidOperationException("Source load strategy is required.");
         }
 
         DbContextOptionsExtensionInfo IDbContextOptionsExtension.Info => Info;
@@ -58,23 +59,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
 
             public override bool IsDatabaseProvider => false;
 
-            public override string LogFragment
-            {
-                get
-                {
-                    if (_logFragment != null)
-                        return _logFragment;
-
-                    var builder = new StringBuilder();
-
-                    if (Extension._loader != null)
-                        builder.Append("CommandTimeout=").Append(Extension._loader).Append(' ');
-
-                    _logFragment = builder.ToString();
-
-                    return _logFragment;
-                }
-            }
+            public override string LogFragment => _logFragment ??= GetLogFragment();
 
             public override long GetServiceProviderHashCode()
             {
@@ -84,6 +69,16 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
             {
                 debugInfo["Merge:" + nameof(MergeSqlServerDbContextOptionsBuilder.SourceLoader)] = (Extension._loader?.GetHashCode() ?? 0L).ToString(CultureInfo.InvariantCulture);
+            }
+
+            private string GetLogFragment()
+            {
+                var builder = new StringBuilder();
+
+                if (Extension._loader != null)
+                    builder.Append("CommandTimeout=").Append(Extension._loader).Append(' ');
+
+                return builder.ToString();
             }
         }
     }

@@ -1,5 +1,4 @@
 using System.Linq;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy.Infrastructure;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests.Contexts;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests.Entities;
@@ -17,7 +16,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests
         {
             var services = new ServiceCollection();
 
-            services.AddDbContext<FooDbContext>(db => db.UseSqlServer("Server=.;Database=Foo;Trusted_Connection=True", sql => sql.UseMerge(merge => merge.UseSqlBulkCopy())));
+            services.AddDbContext<FooDbContext>(db => db.UseSqlServer("Server=.;Database=Foo;Trusted_Connection=True", sql => sql.UseMergeWithSqlBulkCopy()));
 
             var provider = services.BuildServiceProvider();
             var context = provider.GetService<FooDbContext>();
