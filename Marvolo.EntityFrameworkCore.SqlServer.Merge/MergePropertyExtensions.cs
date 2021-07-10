@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    internal static class MergeExtensionsInternal
+    internal static class MergePropertyExtensions
     {
         public static IEnumerable<IPropertyBase> GetColumns(this IEntityType @this)
         {
@@ -26,7 +26,10 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public static IEnumerable<IProperty> GetColumns(this INavigation navigation)
         {
-            return navigation.DeclaringType.Model.FindEntityType(navigation.ClrType).GetProperties().Where(property => !property.IsPrimaryKey());
+            return
+                from property in navigation.DeclaringType.Model.FindEntityType(navigation.ClrType).GetProperties()
+                where !property.IsPrimaryKey()
+                select property;
         }
 
         private static IEnumerable<INavigation> GetOwnedNavigations(this IEntityType @this)
@@ -85,6 +88,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                         foreach (var shadow in entity.GetProperties())
                             yield return shadow;
                     }
+
                     break;
                 }
                 default:

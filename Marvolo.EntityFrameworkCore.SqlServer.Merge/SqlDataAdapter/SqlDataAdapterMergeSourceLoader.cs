@@ -20,7 +20,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
             _options = options.Value;
         }
 
-        public async Task ExecuteAsync(MergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(MergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var command = new SqlCommand
             {
@@ -30,7 +30,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
             };
 
             foreach (var column in source.EntityType.GetColumns())
-            {
                 switch (column)
                 {
                     case IProperty property:
@@ -42,7 +41,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
                     default:
                         throw new NotSupportedException("Property or navigation type not supported.");
                 }
-            }
 
             var columns = command.Parameters.OfType<DbParameter>().Select(parameter => $"[{parameter.SourceColumn}]");
             var parameters = command.Parameters.OfType<DbParameter>().Select(parameter => parameter.ParameterName);
