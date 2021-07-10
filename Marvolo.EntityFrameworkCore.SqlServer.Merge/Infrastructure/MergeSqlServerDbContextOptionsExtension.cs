@@ -30,7 +30,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
 
         public void Validate(IDbContextOptions options)
         {
-            if (_loader != null) throw new InvalidOperationException("Source load strategy is required.");
+            if (_loader == null) throw new InvalidOperationException("Source load strategy is required.");
         }
 
         DbContextOptionsExtensionInfo IDbContextOptionsExtension.Info => Info;
@@ -38,7 +38,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
         public MergeSqlServerDbContextOptionsExtension WithSourceLoader(Func<IServiceProvider, IMergeSourceLoader> factory, ServiceLifetime lifetime = default)
         {
             var clone = Clone();
-            _loader = new ServiceDescriptor(typeof(IMergeSourceLoader), factory, lifetime);
+            clone._loader = new ServiceDescriptor(typeof(IMergeSourceLoader), factory, lifetime);
             return clone;
         }
 

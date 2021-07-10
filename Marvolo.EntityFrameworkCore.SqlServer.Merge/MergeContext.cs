@@ -50,10 +50,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public void AddRange(Type type, IEnumerable<object> entities)
         {
-            _entities.AddOrUpdate(type.Name, _ => new List<object>(entities), (_, list) =>
+            _entities.AddOrUpdate(type.Name, _ => new HashSet<object>(entities), (_, list) =>
             {
-                var set = (List<object>) list;
-                set.AddRange(entities);
+                foreach (var entity in entities) ((HashSet<object>) list).Add(entity);
                 return list;
             });
         }

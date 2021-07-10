@@ -11,7 +11,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
             return @this.UseMerge(merge => merge.SourceLoader(loader, lifetime));
         }
 
-        internal static SqlServerDbContextOptionsBuilder UseMerge(this SqlServerDbContextOptionsBuilder @this, Action<MergeSqlServerDbContextOptionsBuilder> configure = default)
+        public static SqlServerDbContextOptionsBuilder UseMerge(this SqlServerDbContextOptionsBuilder @this, Action<MergeSqlServerDbContextOptionsBuilder> configure = default)
         {
             var builder = ((IRelationalDbContextOptionsBuilderInfrastructure) @this).OptionsBuilder;
             var extension = builder.Options.FindExtension<MergeSqlServerDbContextOptionsExtension>() ?? new MergeSqlServerDbContextOptionsExtension();

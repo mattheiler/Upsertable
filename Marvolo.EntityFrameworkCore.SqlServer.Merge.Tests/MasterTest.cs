@@ -33,7 +33,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests
                     .On(foo => foo.Code)
                     .Insert()
                     .Update(foo => foo.Name)
-                    .Merge(foo => foo.Fubs, fubs =>
+                    .MergeMany(foo => foo.Fubs, fubs =>
                     {
                         fubs
                             .Insert()
@@ -47,7 +47,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests
                                         quxs
                                             .On(fum => fum.Code)
                                             .Insert()
-                                            .Merge(qux => qux.Fums, fums =>
+                                            .MergeMany(qux => qux.Fums, fums =>
                                             {
                                                 fums
                                                     .On(fum => fum.Code)
@@ -56,7 +56,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests
                                     });
                             });
                     })
-                    .Merge(foo => foo.Acks, acks =>
+                    .MergeMany(foo => foo.Acks, acks =>
                     {
                         acks
                             .On(bar => bar.Code)

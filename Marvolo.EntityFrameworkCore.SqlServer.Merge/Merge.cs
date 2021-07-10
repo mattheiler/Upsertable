@@ -49,9 +49,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             await using var source = await Source.CreateAsync(cancellationToken);
             await using var output = await Output.CreateAsync(cancellationToken);
 
-            await source.LoadAsync(context.Get(Target.EntityType.ClrType), cancellationToken);
+            await PreProcessAsync(context, cancellationToken);
 
-            await PreProcessAsync(context,cancellationToken);
+            await source.LoadAsync(context.Get(Target.EntityType.ClrType), cancellationToken);
 
             await context.Db.Database.ExecuteSqlRawAsync(ToString(), cancellationToken);
 
@@ -82,9 +82,10 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         protected virtual async Task PostProcessAsync(MergeContext context, CancellationToken cancellationToken = default)
         {
             var key = Target.EntityType.FindPrimaryKey();
-            var properties = On.Properties.OrderBy(property => property.IsPrimaryKey()).Union(key.Properties).ToList();
+            var ons = On.Properties.Where(property => !property.IsPrimaryKey()).Concat(key.Properties.Intersect(On.Properties)).ToList();
+            var all = ons.Union(key.Properties).ToList();
 
-            var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{Output.GetTableName()}] WHERE [{Output.GetActionName()}] IN ('INSERT', 'UPDATE')";
+            var statement = $"SELECT {string.Join(", ", all.Select(property => $"[{property.GetColumnName()}]"))} FROM [{Output.GetTableName()}] WHERE [{Output.GetActionName()}] IN ('INSERT', 'UPDATE')";
             var connection = (SqlConnection) context.Db.Database.GetDbConnection();
             var transaction = (SqlTransaction) context.Db.Database.CurrentTransaction?.GetDbTransaction();
 
@@ -95,23 +96,22 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 return;
 
             var comparer = new MergeComparer();
-            var entities = context.Get(Target.EntityType.ClrType).Cast<object>().ToLookup(entity => comparer.GetHashCode(properties.Select(property => property.GetGetter().GetClrValue(entity)).ToArray()));
+            var entities = context.Get(Target.EntityType.ClrType).Cast<object>().ToLookup(entity => comparer.GetHashCode(ons.Select(property => property.GetGetter().GetClrValue(entity)).ToArray()));
             var navigations = Target.EntityType.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
 
-            var raw = new object[properties.Count];
-            var values = new object[properties.Count];
-            var offset = properties.Count - key.Properties.Count;
-            var on = new object[properties.Count];
+            var on = new object[ons.Count];
+            var values = new object[all.Count];
+            var offset = all.Count - key.Properties.Count;
 
             while (await reader.ReadAsync(cancellationToken))
             {
-                if (reader.GetValues(raw) != raw.Length)
+                if (reader.GetValues(values) != values.Length)
                     throw new InvalidOperationException("Read an incorrect number of columns.");
 
-                for (var index = 0; index < raw.Length; index++)
+                for (var index = 0; index < values.Length; index++)
                 {
-                    var value = raw[index];
-                    var property = properties[index];
+                    var value = values[index];
+                    var property = all[index];
 
                     var type = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                     if (type.IsEnum)
@@ -126,14 +126,12 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
                 Array.Copy(values, on, on.Length);
 
-                
-
-                var entity = entities[comparer.GetHashCode(on)].SingleOrDefault(obj => comparer.Equals(properties.Select(property => property.GetGetter().GetClrValue(obj)).ToArray(), on));
+                var entity = entities[comparer.GetHashCode(on)].SingleOrDefault(obj => comparer.Equals(ons.Select(property => property.GetGetter().GetClrValue(obj)).ToArray(), on));
                 if (entity == null)
                     throw new InvalidOperationException("Couldn't find the original entity.");
 
-                for (var index = offset; index < properties.Count; index++)
-                    properties[index].PropertyInfo.SetValue(entity, values[index]);
+                for (var index = offset; index < all.Count; index++)
+                    all[index].PropertyInfo.SetValue(entity, values[index]);
 
                 foreach (var navigation in navigations)
                 {
@@ -143,12 +141,12 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
                     var items =
                         navigation.IsCollection()
-                            ? (IEnumerable)value
+                            ? (IEnumerable) value
                             : new[] { value };
 
                     foreach (var item in items)
-                        for (var index = 0; index < properties.Count; index++)
-                            properties[offset].PropertyInfo.SetValue(item, values[offset + index]);
+                        for (var index = 0; index < navigation.ForeignKey.Properties.Count; index++)
+                            navigation.ForeignKey.Properties[index].PropertyInfo.SetValue(item, values[offset + index]);
                 }
             }
         }
