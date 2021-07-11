@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Internal;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -29,14 +28,14 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
                 CommandTimeout = _options.CommandTimeout
             };
 
-            foreach (var column in source.EntityType.GetPropertiesAndOwnedNavigations())
+            foreach (var column in source.GetProperties())
                 switch (column)
                 {
                     case IProperty property:
                         command.Parameters.Add(GetParameter(command, property));
                         break;
                     case INavigation navigation:
-                        command.Parameters.AddRange(navigation.GetPropertiesWhereIsNotPrimaryKey().Select(property => GetParameter(command, property)).ToArray());
+                        command.Parameters.AddRange(navigation.GetTargetType().GetProperties().Where(property => !property.IsPrimaryKey()).Select(property => GetParameter(command, property)).ToArray());
                         break;
                     default:
                         throw new NotSupportedException("Property or navigation type not supported.");

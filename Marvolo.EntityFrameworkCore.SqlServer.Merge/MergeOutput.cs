@@ -11,20 +11,39 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
     public class MergeOutput
     {
         private readonly string _action = "__ACTION__";
+        private readonly DbContext _db;
+        private readonly IList<IProperty> _properties;
         private readonly string _table = "#OUTPUT_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-        public MergeOutput(DbContext context, IEntityType entityType, IEnumerable<IPropertyBase> properties)
+        public MergeOutput(DbContext db, IEnumerable<IProperty> properties)
         {
-            Context = context;
-            EntityType = entityType;
-            Properties = properties.ToList();
+            _db = db;
+            _properties = properties.ToList();
         }
 
-        public DbContext Context { get; }
+        public async Task<MergeOutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
+        {
+            var definitions =
+                _properties
+                    .Select(property => $"{property.GetColumnName()} {property.GetColumnType()}")
+                    .Append($"{GetActionName()} nvarchar(10)");
 
-        public IEntityType EntityType { get; }
+            var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", definitions)})";
 
-        public IReadOnlyList<IPropertyBase> Properties { get; }
+            await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
+
+            return new MergeOutputTable(this);
+        }
+
+        internal async Task DropTableAsync()
+        {
+            await _db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
+        }
+
+        public IEnumerable<IProperty> GetProperties()
+        {
+            return _properties;
+        }
 
         public string GetTableName()
         {
@@ -34,13 +53,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         public string GetActionName()
         {
             return _action;
-        }
-
-        public async Task<MergeOutputTable> CreateAsync(CancellationToken cancellationToken = default)
-        {
-            var table = new MergeOutputTable(this);
-            await table.CreateAsync(cancellationToken);
-            return table;
         }
     }
 }

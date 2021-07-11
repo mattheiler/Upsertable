@@ -3,10 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -25,6 +23,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         private IMergeSourceLoader _loader;
         private MergeOn _on;
         private MergeUpdate _update;
+        private IMergeSourceBuilder _builder;
 
         public MergeBuilder(DbContext db, MergeContext context)
         {
@@ -32,34 +31,42 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             Context = context;
         }
 
-        public MergeContext Context { get; }
+        internal MergeContext Context { get; }
 
-        private IEntityType EntityType => _entityType ??= _db.Model.FindEntityType(typeof(T));
+        internal IEntityType EntityType => _entityType ??= _db.Model.FindEntityType(typeof(T));
 
         public IMerge ToMerge()
         {
+            var builder = _builder ?? _db.GetService<IMergeSourceBuilder>();
             var loader = _loader ?? _db.GetService<IMergeSourceLoader>();
+            var keys = EntityType.FindPrimaryKey().Properties;
+            var properties = EntityType.GetProperties();
+            var navigations =
+                from navigation in EntityType.GetNavigations()
+                where !navigation.IsDependentToPrincipal()
+                where !navigation.IsCollection()
+                where navigation.GetTargetType().IsOwned()
+                select navigation;
+            var columns = properties.Concat<IPropertyBase>(navigations).ToList();
+
             var target = new MergeTarget(EntityType);
-            var source = new MergeSource(_db, EntityType, loader);
-            var on = _on ?? new MergeOn(EntityType.GetProperties().Where(property => property.IsPrimaryKey()));
-            var insert = _insert ?? new MergeInsert(EntityType.GetPropertiesAndOwnedNavigations());
-            var update = _update ?? new MergeUpdate(EntityType.GetPropertiesAndOwnedNavigations());
-            var output = new MergeOutput(_db, EntityType, EntityType.GetPropertiesAndOwnedNavigations().OfType<IProperty>().Where(property => property.IsPrimaryKey()));
+            var source = new MergeSource(_db, columns, builder, loader);
+            var on = _on ?? new MergeOn(keys);
+            var insert = _behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? _insert ?? new MergeInsert(columns) : null;
+            var update = _behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? _update ?? new MergeUpdate(columns) : null;
+            var output = new MergeOutput(_db, on.Properties.Union(keys));
 
             foreach (var entity in Context.Get(typeof(T)))
             foreach (var navigation in _navigations)
             {
-                var type =
-                    navigation.IsDependentToPrincipal()
-                        ? navigation.ForeignKey.PrincipalKey.DeclaringEntityType.ClrType
-                        : navigation.ForeignKey.DeclaringEntityType.ClrType;
-
                 var value = navigation.GetGetter().GetClrValue(entity);
                 if (value == null)
                     continue;
 
+                var type = navigation.GetTargetType().ClrType;
+
                 if (navigation.IsCollection())
-                    Context.AddRange(type, (IEnumerable)value);
+                    Context.AddRange(type, (IEnumerable) value);
                 else
                     Context.Add(type, value);
             }
@@ -67,14 +74,16 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var principals = _principals.Select(principal => principal.ToMerge());
             var dependents = _dependents.Select(dependent => dependent.ToMerge());
 
-            var merges = principals.Append(new Merge(_db, target, source, on, _behavior, insert, update, output)).Concat(dependents).ToList();
-
-            return new MergeComposite(merges);
+            return new MergeComposite(principals.Append(new Merge(_db, target, source, on, _behavior, insert, update, output)).Concat(dependents));
         }
 
-        public MergeBuilder<T> Merge<TProperty>(MemberInfo property, Action<MergeBuilder<TProperty>> build) where TProperty : class
+        private MergeBuilder<T> Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
-            var navigation = EntityType.FindNavigation(property);
+            var body = property.Body as MemberExpression;
+            if (body == null)
+                throw new ArgumentException("Expression body must describe a navigation property.");
+
+            var navigation = EntityType.FindNavigation(body.Member);
             if (navigation == null)
                 throw new ArgumentException("Expression body must describe a navigation property.");
 
@@ -92,15 +101,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return this;
         }
 
-        public MergeBuilder<T> Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
-        {
-            var body = property.Body as MemberExpression;
-            if (body == null)
-                throw new ArgumentException("Expression body must describe a navigation property.");
-
-            return Merge(body.Member, build);
-        }
-
         public MergeBuilder<T> Merge<TProperty>(Expression<Func<T, TProperty>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
             return Merge((LambdaExpression) property, build);
@@ -109,6 +109,12 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         public MergeBuilder<T> MergeMany<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
             return Merge(property, build);
+        }
+
+        public MergeBuilder<T> Using(IMergeSourceBuilder builder)
+        {
+            _builder = builder;
+            return this;
         }
 
         public MergeBuilder<T> Using(IMergeSourceLoader loader)
@@ -123,11 +129,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return this;
         }
 
-        public MergeBuilder<T> On<TProperty>(Expression<Func<T, TProperty>> on)
-        {
-            return On(new MergeOn(EntityType.GetPropertiesAndNavigations(on).Cast<IProperty>()));
-        }
-
         public MergeBuilder<T> Behavior(MergeBehavior behavior, bool enable = true)
         {
             _behavior = enable ? _behavior | behavior : _behavior & ~behavior;
@@ -140,41 +141,15 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return this;
         }
 
-        public MergeBuilder<T> Insert()
-        {
-            return Behavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).Insert(new MergeInsert(EntityType.GetPropertiesAndOwnedNavigations()));
-        }
-
-        public MergeBuilder<T> Insert<TProperty>(Expression<Func<T, TProperty>> insert)
-        {
-            return Behavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).Insert(new MergeInsert(EntityType.GetPropertiesAndNavigations(insert)));
-        }
-
         public MergeBuilder<T> Update(MergeUpdate update)
         {
             _update = update;
             return this;
         }
 
-        public MergeBuilder<T> Update()
-        {
-            return Behavior(MergeBehavior.WhenMatchedThenUpdate).Update(new MergeUpdate(EntityType.GetPropertiesAndOwnedNavigations()));
-        }
-
-        public MergeBuilder<T> Update<TProperty>(Expression<Func<T, TProperty>> update)
-        {
-            return Behavior(MergeBehavior.WhenMatchedThenUpdate).Update(new MergeUpdate(EntityType.GetPropertiesAndNavigations(update)));
-        }
-
-        public MergeBuilder<T> Delete()
-        {
-            return Behavior(MergeBehavior.WhenNotMatchedBySourceThenDelete);
-        }
-
         public Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            var merge = ToMerge();
-            return merge.ExecuteAsync(Context, cancellationToken);
+            return ToMerge().ExecuteAsync(Context, cancellationToken);
         }
     }
 }

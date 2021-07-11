@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
 {
@@ -26,6 +27,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
         public void ApplyServices(IServiceCollection services)
         {
             services.Add(_loader);
+            services.TryAddTransient<IMergeSourceBuilder, MergeSourceBuilder>();
         }
 
         public void Validate(IDbContextOptions options)
