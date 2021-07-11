@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy
+namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy.Extensions
 {
     public static class SqlBulkCopyMergeBuilderExtensions
     {

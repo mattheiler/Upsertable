@@ -1,5 +1,5 @@
 using System.Linq;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy.Infrastructure;
+using Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlBulkCopy.Infrastructure.Extensions;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests.Contexts;
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Tests.Entities;
 using Microsoft.EntityFrameworkCore;

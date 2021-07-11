@@ -1,9 +1,9 @@
 ﻿using System;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure;
+using Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter.Infrastructure
+namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter.Infrastructure.Extensions
 {
     public static class SqlDataAdapterSqlServerDbContextOptionsBuilderExtensions
     {

@@ -2,7 +2,7 @@
 using Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter.Infrastructure
+namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter.Infrastructure.Extensions
 {
     public static class SqlDataAdapterMergeSqlServerDbContextOptionsBuilderExtensions
     {

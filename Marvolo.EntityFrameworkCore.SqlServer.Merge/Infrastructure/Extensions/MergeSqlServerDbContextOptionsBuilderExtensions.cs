@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
+namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure.Extensions
 {
     public static class MergeSqlServerDbContextOptionsBuilderExtensions
     {

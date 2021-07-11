@@ -51,7 +51,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                         columns.Add($"[{property.GetColumnName()}] {property.GetColumnType()}");
                         break;
                     case INavigation navigation:
-                        columns.AddRange(navigation.GetColumns().Select(property => $"[{property.GetColumnName()}] {property.GetColumnType()}"));
+                        columns.AddRange(navigation.GetPropertiesWhereIsNotPrimaryKey().Select(property => $"[{property.GetColumnName()}] {property.GetColumnType()}"));
                         break;
                     default:
                         throw new NotSupportedException("Property or navigation type not supported.");
@@ -79,7 +79,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                         table.Columns.Add(GetDataColumn(property));
                         break;
                     case INavigation navigation:
-                        foreach (var property in navigation.GetColumns())
+                        foreach (var property in navigation.GetPropertiesWhereIsNotPrimaryKey())
                             table.Columns.Add(GetDataColumn(property));
                         break;
                     default:
@@ -98,7 +98,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                             break;
                         case INavigation navigation:
                             var value = navigation.GetGetter().GetClrValue(entity);
-                            foreach (var property in navigation.GetColumns())
+                            foreach (var property in navigation.GetPropertiesWhereIsNotPrimaryKey())
                                 row[property.GetColumnName()] = GetData(property, value);
                             break;
                         default:

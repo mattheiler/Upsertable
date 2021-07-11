@@ -7,7 +7,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Internal
 {
     internal static class MergeNavigationExtensions
     {
-        public static IEnumerable<IProperty> GetColumns(this INavigation navigation)
+        public static IEnumerable<IProperty> GetPropertiesWhereIsNotPrimaryKey(this INavigation navigation)
         {
             return
                 from property in navigation.DeclaringType.Model.FindEntityType(navigation.ClrType).GetProperties()

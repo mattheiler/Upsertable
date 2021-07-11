@@ -183,7 +183,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                             break;
                         case INavigation navigation:
                             var properties =
-                                from property in navigation.GetColumns()
+                                from property in navigation.GetPropertiesWhereIsNotPrimaryKey()
                                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnUpdate) && property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
                                 select property;
                             columns.AddRange(properties.Select(property => property.GetColumnName()));
@@ -212,7 +212,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                             break;
                         case INavigation navigation:
                             var properties =
-                                from property in navigation.GetColumns()
+                                from property in navigation.GetPropertiesWhereIsNotPrimaryKey()
                                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnAdd) && property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
                                 select property;
                             columns.AddRange(properties.Select(property => property.GetColumnName()));

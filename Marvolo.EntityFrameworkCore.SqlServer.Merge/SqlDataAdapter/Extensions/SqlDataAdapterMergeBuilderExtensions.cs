@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
+namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter.Extensions
 {
     public static class SqlDataAdapterMergeBuilderExtensions
     {
