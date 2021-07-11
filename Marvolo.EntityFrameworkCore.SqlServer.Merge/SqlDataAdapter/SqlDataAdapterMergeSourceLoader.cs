@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marvolo.EntityFrameworkCore.SqlServer.Merge.Internal;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -28,7 +29,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
                 CommandTimeout = _options.CommandTimeout
             };
 
-            foreach (var column in source.EntityType.GetColumns())
+            foreach (var column in source.EntityType.GetPropertiesAndOwnedNavigations())
                 switch (column)
                 {
                     case IProperty property:

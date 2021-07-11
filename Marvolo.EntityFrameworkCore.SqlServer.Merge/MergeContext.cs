@@ -3,20 +3,12 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class MergeContext
     {
         private readonly ConcurrentDictionary<string, IEnumerable> _entities = new ConcurrentDictionary<string, IEnumerable>();
-
-        public MergeContext(DbContext db)
-        {
-            Db = db;
-        }
-
-        public DbContext Db { get; }
 
         public void Add<T>(T entity)
         {

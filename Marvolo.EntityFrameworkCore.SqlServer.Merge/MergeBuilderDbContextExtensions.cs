@@ -8,9 +8,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         public static MergeBuilder<T> Merge<T>(this DbContext @this, IEnumerable<T> entities)
             where T : class
         {
-            var context = new MergeContext(@this);
+            var context = new MergeContext();
             context.AddRange(entities);
-            return new MergeBuilder<T>(context);
+            return new MergeBuilder<T>(@this, context);
         }
     }
 }

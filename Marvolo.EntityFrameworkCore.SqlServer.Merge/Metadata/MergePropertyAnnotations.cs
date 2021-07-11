@@ -1,6 +1,6 @@
-﻿namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
+﻿namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Metadata
 {
-    public static class MergeAnnotations
+    public static class MergePropertyAnnotations
     {
         public const string ProviderClrType = "Marvolo.EntityFrameworkCore.SqlServer.Merge:ProviderClrType";
 

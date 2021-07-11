@@ -5,6 +5,8 @@ using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marvolo.EntityFrameworkCore.SqlServer.Merge.Internal;
+using Marvolo.EntityFrameworkCore.SqlServer.Merge.Metadata;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -42,7 +44,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         {
             var columns = new List<string>();
 
-            foreach (var column in _source.EntityType.GetColumns())
+            foreach (var column in _source.EntityType.GetPropertiesAndOwnedNavigations())
                 switch (column)
                 {
                     case IProperty property:
@@ -68,7 +70,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         private static DataTable GetDataTable(IEntityType type, IEnumerable entities)
         {
             var table = new DataTable();
-            var members = type.GetColumns().ToList();
+            var members = type.GetPropertiesAndOwnedNavigations().ToList();
 
             foreach (var member in members)
                 switch (member)
