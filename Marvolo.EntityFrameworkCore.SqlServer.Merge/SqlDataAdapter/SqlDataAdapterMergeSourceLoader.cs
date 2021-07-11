@@ -36,7 +36,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
                         command.Parameters.Add(GetParameter(command, property));
                         break;
                     case INavigation navigation:
-                        command.Parameters.AddRange(navigation.GetColumns().Select(property => GetParameter(command, property)).ToArray());
+                        command.Parameters.AddRange(navigation.GetPropertiesWhereIsNotPrimaryKey().Select(property => GetParameter(command, property)).ToArray());
                         break;
                     default:
                         throw new NotSupportedException("Property or navigation type not supported.");
