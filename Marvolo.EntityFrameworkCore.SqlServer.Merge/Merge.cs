@@ -63,6 +63,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var navigations = _target.EntityType.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && !navigation.DeclaringEntityType.IsOwned()).ToList();
 
             // TODO add scope to the context, so all entities aren't evaluated
+            // TODO manage the set of navigations
 
             foreach (var entity in entities)
             foreach (var navigation in navigations)
@@ -71,7 +72,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
                 var value = navigation.GetValue(entity);
                 if (value != null)
-                    navigation.ForeignKey.SetValues(entity, navigation.ForeignKey.PrincipalKey.GetValues(value));
+                    navigation.ForeignKey.Properties.SetValues(entity, navigation.ForeignKey.PrincipalKey.Properties.GetValues(value));
             }
 
             return Task.CompletedTask;
@@ -84,6 +85,8 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var on = _on.Properties;
             var keys = _target.EntityType.FindPrimaryKey().Properties;
             var properties = on.Concat(keys).ToList();
+
+            // TODO gather alternate keys
 
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}] WHERE [{_output.GetActionName()}] IN ('INSERT', 'UPDATE')";
 
@@ -108,46 +111,41 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 if (reader.GetValues(values) != values.Length)
                     throw new InvalidOperationException("Read an incorrect number of columns.");
 
-                // convert values
-
                 for (var index = 0; index < values.Length; index++)
                 {
+                    var value = values[index];
                     var property = properties[index];
 
                     var type = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                     if (type.IsEnum)
-                        values[index] = Enum.ToObject(type, values[index]);
+                        value = Enum.ToObject(type, value);
 
                     var converter = property.GetValueConverter();
                     if (converter != null)
-                        values[index] = converter.ConvertFromProvider(values[index]);
-                }
+                        value = converter.ConvertFromProvider(value);
 
-                // find by values
+                    values[index] = value;
+                }
 
                 if (!entities.TryGetValue(values.Take(on.Count), out var entity))
                     throw new InvalidOperationException("Couldn't find the original entity.");
 
                 // TODO don't update the entities themselves - index and provide to source loader through... context???
 
-                // update keys
-
                 for (var index = offset; index < properties.Count; index++)
                     properties[index].SetValue(entity, values[index]);
-
-                // update foreign keys
 
                 foreach (var navigation in navigations)
                 {
                     var value = navigation.GetValue(entity);
                     if (value == null)
-                        continue;
+                        return;
 
                     if (navigation.IsCollection())
-                        foreach (var item in (IEnumerable) value)
-                            navigation.ForeignKey.SetValues(item, values, offset);
+                        foreach (var item in (IEnumerable)value)
+                            navigation.ForeignKey.Properties.SetValues(item, values, offset);
                     else
-                        navigation.ForeignKey.SetValues(value, values, offset);
+                        navigation.ForeignKey.Properties.SetValues(value, values, offset);
                 }
             }
         }
@@ -164,37 +162,13 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 .AppendLine($"MERGE [{_target.GetTableName()}] AS [T]")
                 .AppendLine($"USING [{_source.GetTableName()}] AS [S]");
 
-            var conditions =
-                _on
-                    .Properties
-                    .Select(property => property.GetColumnName())
-                    .Select(column => $"[T].[{column}] = [S].[{column}]");
+            var on = _on.Properties.Select(property => property.GetColumnName()).Select(column => $"[T].[{column}] = [S].[{column}]");
 
-            command.AppendLine($"ON {string.Join(" AND ", conditions)}");
+            command.AppendLine($"ON {string.Join(" AND ", on)}");
 
             if (_behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate))
             {
-                var columns = new List<string>();
-
-                foreach (var update in _update.Properties)
-                {
-                    switch (update)
-                    {
-                        case IProperty property:
-                            if (!property.ValueGenerated.HasFlag(ValueGenerated.OnUpdate) && property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn)
-                                columns.Add(property.GetColumnName());
-                            break;
-                        case INavigation navigation:
-                            var properties =
-                                from property in navigation.GetTargetType().GetProperties().Where(property => !property.IsPrimaryKey())
-                                where !property.ValueGenerated.HasFlag(ValueGenerated.OnUpdate) && property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
-                                select property;
-                            columns.AddRange(properties.Select(property => property.GetColumnName()));
-                            break;
-                        default:
-                            throw new NotSupportedException("Property or navigation type not supported.");
-                    }
-                }
+                var columns = GetColumnsForUpdate();
 
                 command.AppendLine($"WHEN MATCHED THEN UPDATE SET {string.Join(", ", columns.Select(column => $"[T].[{column}] = [S].[{column}]"))}");
             }
@@ -205,27 +179,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
             if (_behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert))
             {
-                var columns = new List<string>();
-
-                foreach (var insert in _insert.Properties)
-                {
-                    switch (insert)
-                    {
-                        case IProperty property:
-                            if (!property.ValueGenerated.HasFlag(ValueGenerated.OnAdd) && property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn)
-                                columns.Add(property.GetColumnName());
-                            break;
-                        case INavigation navigation:
-                            var properties =
-                                from property in navigation.GetTargetType().GetProperties().Where(property => !property.IsPrimaryKey())
-                                where !property.ValueGenerated.HasFlag(ValueGenerated.OnAdd) && property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
-                                select property;
-                            columns.AddRange(properties.Select(property => property.GetColumnName()));
-                            break;
-                        default:
-                            throw new NotSupportedException("Property or navigation type not supported.");
-                    }
-                }
+                var columns = GetColumnsForInsert().ToList();
 
                 command.AppendLine($"WHEN NOT MATCHED BY TARGET THEN INSERT ({string.Join(", ", columns)}) VALUES ({string.Join(", ", columns.Select(column => $"[S].[{column}]"))})");
             }
@@ -247,6 +201,56 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 .AppendLine(";");
 
             return command.ToString();
+        }
+
+        private IEnumerable<string> GetColumnsForUpdate()
+        {
+            return _update.Properties.SelectMany(GetColumnsForUpdate);
+        }
+
+        private static IEnumerable<string> GetColumnsForUpdate(IPropertyBase member)
+        {
+            return member switch
+            {
+                IProperty property => GetColumnsForUpdate(new [] { property }),
+                INavigation navigation => GetColumnsForUpdate(navigation.GetTargetType().GetProperties()),
+                _ => throw new NotSupportedException("Property or navigation type not supported.")
+            };
+        }
+
+        private static IEnumerable<string> GetColumnsForUpdate(IEnumerable<IProperty> properties)
+        {
+            return
+                from property in properties
+                where !property.IsPrimaryKey()
+                where !property.ValueGenerated.HasFlag(ValueGenerated.OnAdd)
+                where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
+                select property.GetColumnName();
+        }
+
+        private IEnumerable<string> GetColumnsForInsert()
+        {
+            return _insert.Properties.SelectMany(GetColumnsForInsert);
+        }
+
+        private static IEnumerable<string> GetColumnsForInsert(IPropertyBase member)
+        {
+            return member switch
+            {
+                IProperty property => GetColumnsForInsert(new [] { property }),
+                INavigation navigation => GetColumnsForInsert(navigation.GetTargetType().GetProperties()),
+                _ => throw new NotSupportedException("Property or navigation type not supported.")
+            };
+        }
+
+        private static IEnumerable<string> GetColumnsForInsert(IEnumerable<IProperty> properties)
+        {
+            return
+                from property in properties
+                where !property.IsPrimaryKey()
+                where !property.ValueGenerated.HasFlag(ValueGenerated.OnUpdate)
+                where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
+                select property.GetColumnName();
         }
 
         public override string ToString()

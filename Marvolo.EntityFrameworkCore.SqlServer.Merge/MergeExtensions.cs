@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -12,17 +13,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return property.GetGetter().GetClrValue(obj);
         }
 
-        public static object[] GetValues(this IForeignKey key, object obj)
-        {
-            return key.Properties.GetValues(obj);
-        }
-
-        public static object[] GetValues(this IKey key, object obj)
-        {
-            return key.Properties.GetValues(obj);
-        }
-
-        public static object[] GetValues(this IEnumerable<IProperty> properties, object obj)
+        public static object[] GetValues(this IEnumerable<IPropertyBase> properties, object obj)
         {
             return properties.Select(property => property.GetValue(obj)).ToArray();
         }
@@ -32,17 +23,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             property.PropertyInfo.SetValue(obj, value);
         }
 
-        public static void SetValues(this IForeignKey key, object obj, object[] values, int offset = 0)
-        {
-            key.Properties.SetValues(obj, values, offset);
-        }
-
-        public static void SetValues(this IKey key, object obj, object[] values, int offset = 0)
-        {
-            key.Properties.SetValues(obj, values, offset);
-        }
-
-        public static void SetValues(this IReadOnlyList<IProperty> properties, object obj, IReadOnlyList<object> values, int offset = 0)
+        public static void SetValues(this IReadOnlyList<IPropertyBase> properties, object obj, IReadOnlyList<object> values, int offset = 0)
         {
             for (var index = 0; index < properties.Count; index++) properties[index].SetValue(obj, values[offset + index]);
         }
