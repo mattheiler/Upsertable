@@ -42,7 +42,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public void AddRange(Type type, IEnumerable<object> entities)
         {
-            _entities.AddOrUpdate(type.Name, _ => new HashSet<object>(entities), (_, list) =>
+            _entities.AddOrUpdate(type.FullName!, _ => new HashSet<object>(entities), (_, list) =>
             {
                 foreach (var entity in entities) ((HashSet<object>) list).Add(entity);
                 return list;
@@ -51,12 +51,17 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public IEnumerable Get(Type type)
         {
-            return _entities.TryGetValue(type.Name, out var entities) ? entities : Enumerable.Empty<object>();
+            return _entities.TryGetValue(type.FullName!, out var entities) ? entities : Enumerable.Empty<object>();
         }
 
         public IEnumerable<T> Get<T>()
         {
             return Get(typeof(T)).Cast<T>();
+        }
+
+        public bool Contains(Type type)
+        {
+            return _entities.ContainsKey(type.FullName!);
         }
     }
 }

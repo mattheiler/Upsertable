@@ -60,7 +60,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             // update foreign keys from the principal entities
 
             var entities = context.Get(_target.EntityType.ClrType);
-            var navigations = _target.EntityType.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && !navigation.DeclaringEntityType.IsOwned()).ToList();
+            var navigations = _target.EntityType.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && context.Contains(navigation.DeclaringEntityType.ClrType) && !navigation.DeclaringEntityType.IsOwned()).ToList();
 
             // TODO add scope to the context, so all entities aren't evaluated
             // TODO manage the set of navigations
@@ -97,7 +97,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 return;
 
             var entities = context.Get(_target.EntityType.ClrType).Cast<object>().ToDictionary(on.GetValues, MergeOnEqualityComparer.Default);
-            var navigations = _target.EntityType.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
+            var navigations = _target.EntityType.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType) && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
 
             // TODO manage the set of navigations
 
