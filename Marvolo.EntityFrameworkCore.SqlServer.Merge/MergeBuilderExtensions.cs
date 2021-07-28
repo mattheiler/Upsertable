@@ -98,8 +98,8 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                             if (!entity.IsOwned())
                                 throw new InvalidOperationException($"Expected an owned navigation property: '{member}'.");
 
-                            foreach (var shadow in entity.GetProperties())
-                                yield return shadow; // TODO hmm... how to get a value from this?
+                            foreach (var owned in entity.GetProperties())
+                                yield return owned;
                         }
 
                         break;

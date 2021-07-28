@@ -26,13 +26,13 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.Infrastructure
 
         public void ApplyServices(IServiceCollection services)
         {
-            services.Add(_loader);
+            services.TryAdd(_loader);
             services.TryAddTransient<IMergeSourceBuilder, MergeSourceBuilder>();
         }
 
         public void Validate(IDbContextOptions options)
         {
-            if (_loader == null) throw new InvalidOperationException("Source load strategy is required.");
+            if (_loader == null) throw new InvalidOperationException("A default source load strategy is required.");
         }
 
         DbContextOptionsExtensionInfo IDbContextOptionsExtension.Info => Info;

@@ -73,8 +73,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
             var principals = _principals.Select(principal => principal.ToMerge());
             var dependents = _dependents.Select(dependent => dependent.ToMerge());
+            var merge = new Merge(_db, target, source, on, _behavior, insert, update, output);
 
-            return new MergeComposite(principals.Append(new Merge(_db, target, source, on, _behavior, insert, update, output)).Concat(dependents));
+            return new MergeComposite(principals.Append(merge).Concat(dependents));
         }
 
         private MergeBuilder<T> Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class

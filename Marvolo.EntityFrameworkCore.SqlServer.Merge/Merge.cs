@@ -222,7 +222,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         {
             return
                 from property in properties
-                where !property.IsPrimaryKey()
                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnAdd)
                 where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
                 select property.GetColumnName();
@@ -247,7 +246,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         {
             return
                 from property in properties
-                where !property.IsPrimaryKey()
                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnUpdate)
                 where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
                 select property.GetColumnName();
