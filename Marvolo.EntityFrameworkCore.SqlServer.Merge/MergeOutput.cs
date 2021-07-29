@@ -10,7 +10,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
     public class MergeOutput
     {
-        private readonly string _action = "__ACTION__";
         private readonly DbContext _db;
         private readonly IList<IProperty> _properties;
         private readonly string _table = "#OUTPUT_" + Guid.NewGuid().ToString().Replace('-', '_');
@@ -23,11 +22,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public async Task<MergeOutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
         {
-            var definitions =
-                _properties
-                    .Select(property => $"{property.GetColumnName()} {property.GetColumnType()}")
-                    .Append($"{GetActionName()} nvarchar(10)");
-
+            var definitions = _properties.Select(property => $"{property.GetColumnName()} {property.GetColumnType()}");
             var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", definitions)})";
 
             await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
@@ -48,11 +43,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         public string GetTableName()
         {
             return _table;
-        }
-
-        public string GetActionName()
-        {
-            return _action;
         }
     }
 }

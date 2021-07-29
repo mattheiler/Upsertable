@@ -19,7 +19,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
             _options = options;
         }
 
-        public async Task ExecuteAsync(MergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public Task ExecuteAsync(MergeSource source, DataTable table, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var command = new SqlCommand
             {
@@ -48,9 +48,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge.SqlDataAdapter
 
             var adapter = new Microsoft.Data.SqlClient.SqlDataAdapter { InsertCommand = command };
 
-            await Task.Yield();
-
             adapter.Update(table);
+
+            return Task.CompletedTask;
         }
 
         private static DbParameter GetParameter(DbCommand command, IProperty property)

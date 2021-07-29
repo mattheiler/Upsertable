@@ -49,6 +49,11 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             });
         }
 
+        public bool Contains(Type type)
+        {
+            return _entities.ContainsKey(type.FullName!);
+        }
+
         public IEnumerable Get(Type type)
         {
             return _entities.TryGetValue(type.FullName!, out var entities) ? entities : Enumerable.Empty<object>();
@@ -57,11 +62,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         public IEnumerable<T> Get<T>()
         {
             return Get(typeof(T)).Cast<T>();
-        }
-
-        public bool Contains(Type type)
-        {
-            return _entities.ContainsKey(type.FullName!);
         }
     }
 }

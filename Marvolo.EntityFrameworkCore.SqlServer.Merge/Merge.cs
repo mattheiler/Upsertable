@@ -60,10 +60,15 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             // update foreign keys from the principal entities
 
             var entities = context.Get(_target.EntityType.ClrType);
-            var navigations = _target.EntityType.GetNavigations().Where(navigation => navigation.IsDependentToPrincipal() && context.Contains(navigation.DeclaringEntityType.ClrType) && !navigation.DeclaringEntityType.IsOwned()).ToList();
+            var navigations = (
+                from navigation in _target.EntityType.GetNavigations()
+                where navigation.IsDependentToPrincipal()
+                where context.Contains(navigation.DeclaringEntityType.ClrType)
+                where !navigation.DeclaringEntityType.IsOwned()
+                select navigation
+            ).ToList();
 
             // TODO add scope to the context, so all entities aren't evaluated
-            // TODO manage the set of navigations
 
             foreach (var entity in entities)
             foreach (var navigation in navigations)
@@ -88,7 +93,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
             // TODO gather alternate keys
 
-            var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}] WHERE [{_output.GetActionName()}] IN ('INSERT', 'UPDATE')";
+            var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
 
             await using var command = new SqlCommand(statement, connection, transaction);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -97,13 +102,17 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 return;
 
             var entities = context.Get(_target.EntityType.ClrType).Cast<object>().ToDictionary(on.GetValues, MergeOnEqualityComparer.Default);
-            var navigations = _target.EntityType.GetNavigations().Where(navigation => !navigation.IsDependentToPrincipal() && context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType) && !navigation.ForeignKey.DeclaringEntityType.IsOwned()).ToList();
-
-            // TODO manage the set of navigations
+            var navigations = (
+                from navigation in _target.EntityType.GetNavigations()
+                where !navigation.IsDependentToPrincipal()
+                where context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType)
+                where !navigation.ForeignKey.DeclaringEntityType.IsOwned()
+                select navigation
+            ).ToList();
 
             var offset = properties.Count - keys.Count;
             var values = new object[properties.Count];
-            
+
             while (await reader.ReadAsync(cancellationToken))
             {
                 // read values
@@ -142,7 +151,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                         return;
 
                     if (navigation.IsCollection())
-                        foreach (var item in (IEnumerable)value)
+                        foreach (var item in (IEnumerable) value)
                             navigation.ForeignKey.Properties.SetValues(item, values, offset);
                     else
                         navigation.ForeignKey.Properties.SetValues(value, values, offset);
@@ -193,8 +202,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 _output
                     .GetProperties()
                     .Select(property => property.GetColumnName())
-                    .Select(column => $"INSERTED.[{column}] AS [{column}]")
-                    .Append($"$action AS [{_output.GetActionName()}]");
+                    .Select(column => $"INSERTED.[{column}] AS [{column}]");
 
             command
                 .AppendLine($"OUTPUT {string.Join(", ", output)} INTO [{_output.GetTableName()}]")
@@ -212,7 +220,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         {
             return member switch
             {
-                IProperty property => GetColumnsForUpdate(new [] { property }),
+                IProperty property => GetColumnsForUpdate(new[] { property }),
                 INavigation navigation => GetColumnsForUpdate(navigation.GetTargetType().GetProperties()),
                 _ => throw new NotSupportedException("Property or navigation type not supported.")
             };
@@ -236,7 +244,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         {
             return member switch
             {
-                IProperty property => GetColumnsForInsert(new [] { property }),
+                IProperty property => GetColumnsForInsert(new[] { property }),
                 INavigation navigation => GetColumnsForInsert(navigation.GetTargetType().GetProperties()),
                 _ => throw new NotSupportedException("Property or navigation type not supported.")
             };
