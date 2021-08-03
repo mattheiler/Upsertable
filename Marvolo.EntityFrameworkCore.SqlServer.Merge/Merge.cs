@@ -58,13 +58,14 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         protected virtual Task PreProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var entities = context.Get(_target.EntityType.ClrType);
-            var navigations = (
-                from navigation in _target.EntityType.GetNavigations()
-                where navigation.IsDependentToPrincipal()
-                where !navigation.DeclaringEntityType.IsOwned()
-                where context.Contains(navigation.DeclaringEntityType.ClrType)
-                select navigation
-            ).ToList();
+            var navigations = 
+                _target
+                    .EntityType
+                    .GetNavigations()
+                    .Where(navigation => navigation.IsDependentToPrincipal())
+                    .Where(navigation => !navigation.DeclaringEntityType.IsOwned())
+                    .Where(navigation => context.Contains(navigation.DeclaringEntityType.ClrType))
+                    .ToList();
 
             foreach (var entity in entities)
             foreach (var navigation in navigations)
@@ -79,9 +80,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         protected virtual async Task PostProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            var on = _on.Properties;
-            var keys = _target.EntityType.GetKeys().ToList();
-            var properties = on.Union(keys.SelectMany(key => key.Properties)).Distinct().ToList();
+            var properties = _on.Properties.Union(_target.EntityType.GetKeys().SelectMany(key => key.Properties)).Distinct().ToList();
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
 
             await using var command = new SqlCommand(statement, connection, transaction);
@@ -90,14 +89,15 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             if (!reader.HasRows)
                 return;
 
-            var entities = context.Get(_target.EntityType.ClrType).Cast<object>().ToDictionary(on.GetValues, MergeOnEqualityComparer.Default);
-            var navigations = (
-                from navigation in _target.EntityType.GetNavigations()
-                where !navigation.IsDependentToPrincipal()
-                where !navigation.ForeignKey.DeclaringEntityType.IsOwned()
-                where context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType)
-                select navigation
-            ).ToList();
+            var entities = context.Get(_target.EntityType.ClrType).Cast<object>().ToDictionary(_on.Properties.GetValues, MergeOnEqualityComparer.Default);
+            var navigations = 
+                _target
+                    .EntityType
+                    .GetNavigations()
+                    .Where(navigation => !navigation.IsDependentToPrincipal())
+                    .Where(navigation => !navigation.ForeignKey.DeclaringEntityType.IsOwned())
+                    .Where(navigation => context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType))
+                    .ToList();
 
             var values = new object[properties.Count];
 
@@ -122,11 +122,10 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                     values[index] = value;
                 }
 
-                if (!entities.TryGetValue(values.Take(on.Count), out var entity))
+                if (!entities.TryGetValue(values.Take(_on.Properties.Count), out var entity))
                     throw new InvalidOperationException("Couldn't find the original entity.");
 
-                for (var index = 0; index < properties.Count; index++)
-                    properties[index].SetValue(entity, values[index]);
+                properties.SetValues(entity, values);
 
                 foreach (var navigation in navigations)
                 {
