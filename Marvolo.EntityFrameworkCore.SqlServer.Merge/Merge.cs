@@ -68,8 +68,6 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 select navigation
             ).ToList();
 
-            // TODO add scope to the context, so all entities aren't evaluated
-
             foreach (var entity in entities)
             foreach (var navigation in navigations)
             {
@@ -88,11 +86,8 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             // update keys and foreign keys from the output values
 
             var on = _on.Properties;
-            var keys = _target.EntityType.FindPrimaryKey().Properties;
-            var properties = on.Concat(keys).ToList();
-
-            // TODO gather alternate keys
-
+            var keys = _target.EntityType.GetKeys().ToList();
+            var properties = on.Concat(keys.SelectMany(key => key.Properties)).ToList();
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
 
             await using var command = new SqlCommand(statement, connection, transaction);
@@ -110,7 +105,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 select navigation
             ).ToList();
 
-            var offset = properties.Count - keys.Count;
+            var length = _on.Properties.Count;
             var values = new object[properties.Count];
 
             while (await reader.ReadAsync(cancellationToken))
@@ -139,9 +134,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 if (!entities.TryGetValue(values.Take(on.Count), out var entity))
                     throw new InvalidOperationException("Couldn't find the original entity.");
 
-                // TODO don't update the entities themselves - index and provide to source loader through... context???
-
-                for (var index = offset; index < properties.Count; index++)
+                for (var index = length; index < properties.Count; index++)
                     properties[index].SetValue(entity, values[index]);
 
                 foreach (var navigation in navigations)
@@ -149,6 +142,8 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                     var value = navigation.GetValue(entity);
                     if (value == null)
                         return;
+
+                    var offset = keys.Take(keys.IndexOf(navigation.ForeignKey.PrincipalKey)).Aggregate(length, (seed, key) => seed + key.Properties.Count);
 
                     if (navigation.IsCollection())
                         foreach (var item in (IEnumerable) value)
