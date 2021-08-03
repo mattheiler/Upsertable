@@ -1,42 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public static class MergeExtensions
+    internal static class MergeExtensions
     {
-        internal static IMerge ToComposite(this IEnumerable<IMerge> @this)
+        public static object GetValue(this IPropertyBase property, object obj)
         {
-            return new MergeComposite(@this);
+            return property.GetGetter().GetClrValue(obj);
         }
 
-        internal static IMerge WithNoTracking(this IMerge @this)
+        public static object[] GetValues(this IEnumerable<IPropertyBase> properties, object obj)
         {
-            return new MergeWithNoTracking(@this);
+            return properties.Select(property => property.GetValue(obj)).ToArray();
         }
 
-        public static Type GetMergeProviderClrType(this IProperty property)
+        public static void SetValue(this IPropertyBase property, object obj, object value)
         {
-            return (Type)property[MergeAnnotations.ProviderClrType];
+            property.PropertyInfo.SetValue(obj, value);
         }
 
-        public static ValueConverter GetMergeValueConverter(this IProperty property)
+        public static void SetValues(this IReadOnlyList<IPropertyBase> properties, object obj, IReadOnlyList<object> values, int offset = 0)
         {
-            return (ValueConverter)property[MergeAnnotations.ValueConverter];
-        }
-
-        public static PropertyBuilder<TProperty> HasMergeProviderClrType<TProperty>(this PropertyBuilder<TProperty> property, Type type)
-        {
-            return property.HasAnnotation(MergeAnnotations.ProviderClrType, type);
-        }
-
-        public static PropertyBuilder<TProperty> HasMergeValueConverter<TProperty, TProvider>(this PropertyBuilder<TProperty> property, ValueConverter<TProperty, TProvider> converter)
-        {
-            return property.HasAnnotation(MergeAnnotations.ValueConverter, converter);
+            for (var index = 0; index < properties.Count; index++) properties[index].SetValue(obj, values[offset + index]);
         }
     }
 }

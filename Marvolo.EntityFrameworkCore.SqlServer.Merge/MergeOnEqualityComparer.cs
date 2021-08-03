@@ -4,15 +4,15 @@ using System.Linq;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    internal class MergeOnEqualityComparer : EqualityComparer<object[]>
+    public class MergeOnEqualityComparer : EqualityComparer<IEnumerable<object>>
     {
-        public static readonly MergeOnEqualityComparer Instance = new MergeOnEqualityComparer();
+        public new static readonly MergeOnEqualityComparer Default = new MergeOnEqualityComparer();
 
         private MergeOnEqualityComparer()
         {
         }
 
-        public override bool Equals(object[] x, object[] y)
+        public override bool Equals(IEnumerable<object> x, IEnumerable<object> y)
         {
             if (x == null && y == null)
                 return true;
@@ -21,7 +21,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             return x.SequenceEqual(y);
         }
 
-        public override int GetHashCode(object[] obj)
+        public override int GetHashCode(IEnumerable<object> obj)
         {
             return obj.Aggregate(0, HashCode.Combine);
         }

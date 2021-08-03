@@ -1,35 +1,64 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marvolo.EntityFrameworkCore.SqlServer.Merge.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 {
-    public class MergeSource : IMergeSource
+    public class MergeSource
     {
+        private readonly IMergeSourceBuilder _builder;
+        private readonly DbContext _db;
+        private readonly IMergeSourceLoader _loader;
+        private readonly IList<IPropertyBase> _properties;
         private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-        public MergeSource(DbContext context, IEntityType entityType, IMergeSourceLoadStrategy loader)
+        public MergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IMergeSourceBuilder builder, IMergeSourceLoader loader)
         {
-            Context = context;
-            EntityType = entityType;
-            Loader = loader;
+            _db = db;
+            _properties = properties.ToList();
+            _builder = builder;
+            _loader = loader;
         }
 
-        public DbContext Context { get; }
-
-        public async Task<IMergeSourceTable> CreateAsync(CancellationToken cancellationToken = default)
+        public async Task<MergeSourceTable> CreateTableAsync(CancellationToken cancellationToken = default)
         {
-            var table = new MergeSourceTable(this, Loader);
-            await table.CreateAsync(cancellationToken);
-            return table;
+            var columns = new List<string>();
+
+            foreach (var column in _properties)
+            {
+                switch (column)
+                {
+                    case IProperty property:
+                        columns.Add($"[{property.GetColumnName()}] {property.GetColumnType()}");
+                        break;
+                    case INavigation navigation:
+                        columns.AddRange(navigation.GetTargetType().GetProperties().Where(property => !property.IsPrimaryKey()).Select(property => $"[{property.GetColumnName()}] {property.GetColumnType()}"));
+                        break;
+                    default:
+                        throw new NotSupportedException("Property or navigation type not supported.");
+                }
+            }
+
+            var command = $"CREATE TABLE {GetTableName()} ({string.Join(", ", columns)})";
+
+            await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
+
+            return new MergeSourceTable(this, _builder, _loader);
         }
 
-        public IEntityType EntityType { get; }
+        internal async ValueTask DropTableAsync()
+        {
+            await _db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
+        }
 
-        public IMergeSourceLoadStrategy Loader { get; }
+        public IEnumerable<IPropertyBase> GetProperties()
+        {
+            return _properties;
+        }
 
         public string GetTableName()
         {
