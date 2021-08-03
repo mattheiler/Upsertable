@@ -53,7 +53,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var on = _on ?? new MergeOn(keys);
             var insert = _behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? _insert ?? new MergeInsert(properties) : null;
             var update = _behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? _update ?? new MergeUpdate(properties) : null;
-            var output = new MergeOutput(_db, on.Properties.Union(keys));
+            var output = new MergeOutput(_db, on.Properties.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
 
             foreach (var entity in Context.Get(typeof(T)))
             foreach (var navigation in _navigations)

@@ -80,7 +80,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         protected virtual async Task PostProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            var properties = _on.Properties.Union(_target.EntityType.GetKeys().SelectMany(key => key.Properties)).Distinct().ToList();
+            var properties = _on.Properties.Union(_target.EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()).ToList();
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
 
             await using var command = new SqlCommand(statement, connection, transaction);
@@ -184,6 +184,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var output =
                 _output
                     .GetProperties()
+                    .Union(_target.EntityType.GetKeys().SelectMany(key => key.Properties).Distinct())
                     .Select(property => property.GetColumnName())
                     .Select(column => $"INSERTED.[{column}] AS [{column}]");
 

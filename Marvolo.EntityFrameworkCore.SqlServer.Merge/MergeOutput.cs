@@ -22,7 +22,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public async Task<MergeOutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
         {
-            var definitions = _properties.Select(property => $"{property.GetColumnName()} {property.GetColumnType()}");
+            var definitions = GetProperties().Select(property => $"{property.GetColumnName()} {property.GetColumnType()}");
             var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", definitions)})";
 
             await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);

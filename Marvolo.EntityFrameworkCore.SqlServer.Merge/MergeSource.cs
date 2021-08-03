@@ -28,7 +28,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
         {
             var columns = new List<string>();
 
-            foreach (var column in _properties)
+            foreach (var column in GetProperties())
             {
                 switch (column)
                 {
