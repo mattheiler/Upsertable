@@ -22,7 +22,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public void AddRange<T>(params T[] entities)
         {
-            AddRange(entities.OfType<T>());
+            AddRange(entities.AsEnumerable());
         }
 
         public void AddRange<T>(IEnumerable<T> entities)
