@@ -57,22 +57,18 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         protected virtual Task PreProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            // update foreign keys from the principal entities
-
             var entities = context.Get(_target.EntityType.ClrType);
             var navigations = (
                 from navigation in _target.EntityType.GetNavigations()
                 where navigation.IsDependentToPrincipal()
-                where context.Contains(navigation.DeclaringEntityType.ClrType)
                 where !navigation.DeclaringEntityType.IsOwned()
+                where context.Contains(navigation.DeclaringEntityType.ClrType)
                 select navigation
             ).ToList();
 
             foreach (var entity in entities)
             foreach (var navigation in navigations)
             {
-                // update foreign key
-
                 var value = navigation.GetValue(entity);
                 if (value != null)
                     navigation.ForeignKey.Properties.SetValues(entity, navigation.ForeignKey.PrincipalKey.Properties.GetValues(value));
@@ -83,11 +79,9 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         protected virtual async Task PostProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            // update keys and foreign keys from the output values
-
             var on = _on.Properties;
             var keys = _target.EntityType.GetKeys().ToList();
-            var properties = on.Concat(keys.SelectMany(key => key.Properties)).ToList();
+            var properties = on.Union(keys.SelectMany(key => key.Properties)).Distinct().ToList();
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
 
             await using var command = new SqlCommand(statement, connection, transaction);
@@ -100,25 +94,22 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var navigations = (
                 from navigation in _target.EntityType.GetNavigations()
                 where !navigation.IsDependentToPrincipal()
-                where context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType)
                 where !navigation.ForeignKey.DeclaringEntityType.IsOwned()
+                where context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType)
                 select navigation
             ).ToList();
 
-            var length = _on.Properties.Count;
             var values = new object[properties.Count];
 
             while (await reader.ReadAsync(cancellationToken))
             {
-                // read values
-
                 if (reader.GetValues(values) != values.Length)
                     throw new InvalidOperationException("Read an incorrect number of columns.");
 
-                for (var index = 0; index < values.Length; index++)
+                for (var index = 0; index < properties.Count; index++)
                 {
-                    var value = values[index];
                     var property = properties[index];
+                    var value = values[index];
 
                     var type = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                     if (type.IsEnum)
@@ -134,22 +125,20 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
                 if (!entities.TryGetValue(values.Take(on.Count), out var entity))
                     throw new InvalidOperationException("Couldn't find the original entity.");
 
-                for (var index = length; index < properties.Count; index++)
+                for (var index = 0; index < properties.Count; index++)
                     properties[index].SetValue(entity, values[index]);
 
                 foreach (var navigation in navigations)
                 {
                     var value = navigation.GetValue(entity);
                     if (value == null)
-                        return;
-
-                    var offset = keys.Take(keys.IndexOf(navigation.ForeignKey.PrincipalKey)).Aggregate(length, (seed, key) => seed + key.Properties.Count);
+                        continue;
 
                     if (navigation.IsCollection())
                         foreach (var item in (IEnumerable) value)
-                            navigation.ForeignKey.Properties.SetValues(item, values, offset);
+                            navigation.ForeignKey.Properties.SetValues(item, navigation.ForeignKey.PrincipalKey.Properties.GetValues(entity));
                     else
-                        navigation.ForeignKey.Properties.SetValues(value, values, offset);
+                        navigation.ForeignKey.Properties.SetValues(value, navigation.ForeignKey.PrincipalKey.Properties.GetValues(entity));
                 }
             }
         }

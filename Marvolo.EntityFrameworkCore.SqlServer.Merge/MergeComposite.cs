@@ -22,8 +22,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         public async Task ExecuteAsync(MergeContext context, CancellationToken cancellationToken = default)
         {
-            foreach (var merge in _merges)
-                await merge.ExecuteAsync(context, cancellationToken);
+            foreach (var merge in _merges) await merge.ExecuteAsync(context, cancellationToken);
         }
 
         public override string ToString()

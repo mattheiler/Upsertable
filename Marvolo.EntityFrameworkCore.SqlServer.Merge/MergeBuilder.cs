@@ -40,20 +40,19 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
             var builder = _builder ?? _db.GetService<IMergeSourceBuilder>();
             var loader = _loader ?? _db.GetService<IMergeSourceLoader>();
             var keys = EntityType.FindPrimaryKey().Properties;
-            var properties = EntityType.GetProperties();
             var navigations =
                 from navigation in EntityType.GetNavigations()
                 where !navigation.IsDependentToPrincipal()
                 where !navigation.IsCollection()
                 where navigation.GetTargetType().IsOwned()
                 select navigation;
-            var columns = properties.Concat<IPropertyBase>(navigations).ToList();
+            var properties = EntityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
             var target = new MergeTarget(EntityType);
-            var source = new MergeSource(_db, columns, builder, loader);
+            var source = new MergeSource(_db, properties, builder, loader);
             var on = _on ?? new MergeOn(keys);
-            var insert = _behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? _insert ?? new MergeInsert(columns) : null;
-            var update = _behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? _update ?? new MergeUpdate(columns) : null;
+            var insert = _behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? _insert ?? new MergeInsert(properties) : null;
+            var update = _behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? _update ?? new MergeUpdate(properties) : null;
             var output = new MergeOutput(_db, on.Properties.Union(keys));
 
             foreach (var entity in Context.Get(typeof(T)))
@@ -80,6 +79,7 @@ namespace Marvolo.EntityFrameworkCore.SqlServer.Merge
 
         private MergeBuilder<T> Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
+            // ReSharper disable once UseNegatedPatternMatching
             var body = property.Body as MemberExpression;
             if (body == null)
                 throw new ArgumentException("Expression body must describe a navigation property.");
