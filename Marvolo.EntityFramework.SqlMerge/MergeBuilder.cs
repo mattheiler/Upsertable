@@ -79,12 +79,7 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         private MergeBuilder<T> Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
-            // ReSharper disable once UseNegatedPatternMatching
-            var body = property.Body as MemberExpression;
-            if (body == null)
-                throw new ArgumentException("Expression body must describe a navigation property.");
-
-            var navigation = EntityType.FindNavigation(body.Member);
+            var navigation = property.Body is MemberExpression body ? EntityType.FindNavigation(body.Member) : default;
             if (navigation == null)
                 throw new ArgumentException("Expression body must describe a navigation property.");
 
