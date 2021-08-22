@@ -22,7 +22,7 @@ namespace Marvolo.EntityFramework.SqlMerge
                         table.Columns.Add(GetDataColumn(property));
                         break;
                     case INavigation navigation:
-                        foreach (var property in navigation.GetTargetType().GetProperties().Where(property => !property.IsPrimaryKey())) 
+                        foreach (var property in navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey())) 
                             table.Columns.Add(GetDataColumn(property));
                         break;
                     default:
@@ -41,7 +41,7 @@ namespace Marvolo.EntityFramework.SqlMerge
                             break;
                         case INavigation navigation:
                             var value = navigation.GetGetter().GetClrValue(entity);
-                            foreach (var property in navigation.GetTargetType().GetProperties().Where(property => !property.IsPrimaryKey())) 
+                            foreach (var property in navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey())) 
                                 row[property.GetColumnName()] = GetData(property, value);
                             break;
                         default:

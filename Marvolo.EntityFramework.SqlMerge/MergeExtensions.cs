@@ -19,7 +19,10 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public static void SetValue(this IPropertyBase property, object obj, object value)
         {
-            property.PropertyInfo.SetValue(obj, value);
+            if (property.IsIndexerProperty())
+                property.PropertyInfo.SetValue(obj, value, new object[] { property.Name });
+            else
+                property.PropertyInfo.SetValue(obj, value);
         }
 
         public static void SetValues(this IReadOnlyList<IPropertyBase> properties, object obj, IReadOnlyList<object> values, int offset = 0)

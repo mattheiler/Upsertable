@@ -62,7 +62,7 @@ namespace Marvolo.EntityFramework.SqlMerge
                 _target
                     .EntityType
                     .GetNavigations()
-                    .Where(navigation => navigation.IsDependentToPrincipal())
+                    .Where(navigation => navigation.IsOnDependent)
                     .Where(navigation => !navigation.DeclaringEntityType.IsOwned())
                     .Where(navigation => context.Contains(navigation.DeclaringEntityType.ClrType))
                     .ToList();
@@ -94,7 +94,7 @@ namespace Marvolo.EntityFramework.SqlMerge
                 _target
                     .EntityType
                     .GetNavigations()
-                    .Where(navigation => !navigation.IsDependentToPrincipal())
+                    .Where(navigation => !navigation.IsOnDependent)
                     .Where(navigation => !navigation.ForeignKey.DeclaringEntityType.IsOwned())
                     .Where(navigation => context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType))
                     .ToList();
@@ -133,7 +133,7 @@ namespace Marvolo.EntityFramework.SqlMerge
                     if (value == null)
                         continue;
 
-                    if (navigation.IsCollection())
+                    if (navigation.IsCollection)
                         foreach (var item in (IEnumerable) value)
                             navigation.ForeignKey.Properties.SetValues(item, navigation.ForeignKey.PrincipalKey.Properties.GetValues(entity));
                     else
@@ -205,7 +205,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             return member switch
             {
                 IProperty property => GetColumnsForUpdate(new[] { property }),
-                INavigation navigation => GetColumnsForUpdate(navigation.GetTargetType().GetProperties()),
+                INavigation navigation => GetColumnsForUpdate(navigation.TargetEntityType.GetProperties()),
                 _ => throw new NotSupportedException("Property or navigation type not supported.")
             };
         }
@@ -229,7 +229,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             return member switch
             {
                 IProperty property => GetColumnsForInsert(new[] { property }),
-                INavigation navigation => GetColumnsForInsert(navigation.GetTargetType().GetProperties()),
+                INavigation navigation => GetColumnsForInsert(navigation.TargetEntityType.GetProperties()),
                 _ => throw new NotSupportedException("Property or navigation type not supported.")
             };
         }
