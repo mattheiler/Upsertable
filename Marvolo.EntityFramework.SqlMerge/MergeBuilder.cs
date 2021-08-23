@@ -21,6 +21,7 @@ namespace Marvolo.EntityFramework.SqlMerge
         private MergeBehavior _behavior;
         private MergeInsert _insert;
         private MergeOn _on;
+        private IMergeResolver _resolver;
         private IMergeSourceBuilder _sourceBuilder;
         private IMergeSourceLoader _sourceLoader;
         private MergeUpdate _update;
@@ -38,6 +39,7 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public IMerge ToMerge()
         {
+            var resolver = _resolver ?? new EntityTypeMergeResolver(EntityType);
             var builder = _sourceBuilder ?? _db.GetService<IMergeSourceBuilder>();
             var loader = _sourceLoader ?? _db.GetService<IMergeSourceLoader>();
             var keys = EntityType.FindPrimaryKey().Properties;
@@ -50,11 +52,12 @@ namespace Marvolo.EntityFramework.SqlMerge
             var properties = EntityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
             var target = new MergeTarget(EntityType);
-            var source = new MergeSource(_db, properties, builder, loader);
+            var source = new MergeSource(_db, properties, resolver, builder, loader);
             var on = _on ?? new MergeOn(keys);
             var insert = _behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? _insert ?? new MergeInsert(properties) : null;
             var update = _behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? _update ?? new MergeUpdate(properties) : null;
             var output = new MergeOutput(_db, on.Properties.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
+
 
             //if (EntityType.IsPropertyBag)
             //{
@@ -108,27 +111,9 @@ namespace Marvolo.EntityFramework.SqlMerge
             return new MergeComposite(principals.Append(merge).Concat(dependents));
         }
 
-        public MergeBuilder Using(IMergeSourceBuilder builder)
-        {
-            _sourceBuilder = builder;
-            return this;
-        }
-
-        public MergeBuilder Using(IMergeSourceLoader loader)
-        {
-            _sourceLoader = loader;
-            return this;
-        }
-
         public MergeBuilder On(MergeOn on)
         {
             _on = on;
-            return this;
-        }
-
-        public MergeBuilder WithBehavior(MergeBehavior behavior, bool enable = true)
-        {
-            _behavior = enable ? _behavior | behavior : _behavior & ~behavior;
             return this;
         }
 
@@ -141,6 +126,30 @@ namespace Marvolo.EntityFramework.SqlMerge
         public MergeBuilder Update(MergeUpdate update)
         {
             _update = update;
+            return this;
+        }
+
+        public MergeBuilder WithBehavior(MergeBehavior behavior, bool enable = true)
+        {
+            _behavior = enable ? _behavior | behavior : _behavior & ~behavior;
+            return this;
+        }
+
+        public MergeBuilder WithResolver(IMergeResolver resolver)
+        {
+            _resolver = resolver;
+            return this;
+        }
+
+        public MergeBuilder WithSourceBuilder(IMergeSourceBuilder builder)
+        {
+            _sourceBuilder = builder;
+            return this;
+        }
+
+        public MergeBuilder WithSourceLoader(IMergeSourceLoader loader)
+        {
+            _sourceLoader = loader;
             return this;
         }
 
@@ -158,7 +167,10 @@ namespace Marvolo.EntityFramework.SqlMerge
             {
                 case ISkipNavigation skipNavigation:
                 {
-                    var skip = new MergeBuilder(_db, Context, skipNavigation.JoinEntityType).WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert);
+                    var skip =
+                        new MergeBuilder(_db, Context, skipNavigation.JoinEntityType)
+                            .WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert)
+                            .WithResolver(new JoinEntityTypeMergeResolver(skipNavigation));
 
                     if (skipNavigation.IsOnDependent)
                         builder._dependents.Add(skip);
@@ -208,17 +220,17 @@ namespace Marvolo.EntityFramework.SqlMerge
             return (MergeBuilder<T>) Merge(property, build);
         }
 
-        public new MergeBuilder<T> Using(IMergeSourceBuilder builder)
+        public new MergeBuilder<T> WithSourceBuilder(IMergeSourceBuilder builder)
         {
-            return (MergeBuilder<T>) base.Using(builder);
+            return (MergeBuilder<T>) base.WithSourceBuilder(builder);
         }
 
-        public new MergeBuilder<T> Using(IMergeSourceLoader loader)
+        public new MergeBuilder<T> WithSourceLoader(IMergeSourceLoader loader)
         {
-            return (MergeBuilder<T>) base.Using(loader);
+            return (MergeBuilder<T>) base.WithSourceLoader(loader);
         }
 
-        public new MergeBuilder<T> WithOn(MergeOn on)
+        public new MergeBuilder<T> On(MergeOn on)
         {
             return (MergeBuilder<T>) base.On(on);
         }
@@ -228,12 +240,12 @@ namespace Marvolo.EntityFramework.SqlMerge
             return (MergeBuilder<T>) base.WithBehavior(behavior, enable);
         }
 
-        public new MergeBuilder<T> WithInserts(MergeInsert insert)
+        public new MergeBuilder<T> Insert(MergeInsert insert)
         {
             return (MergeBuilder<T>) base.Insert(insert);
         }
 
-        public new MergeBuilder<T> WithUpdates(MergeUpdate update)
+        public new MergeBuilder<T> Update(MergeUpdate update)
         {
             return (MergeBuilder<T>) base.Update(update);
         }

@@ -8,7 +8,7 @@ namespace Marvolo.EntityFramework.SqlMerge.SqlBulkCopy.Extensions
         {
             var options = new SqlBulkCopyMergeSourceLoaderOptions();
             configure?.Invoke(options);
-            return @this.Using(new SqlBulkCopyMergeSourceLoader(options));
+            return @this.WithSourceLoader(new SqlBulkCopyMergeSourceLoader(options));
         }
     }
 }

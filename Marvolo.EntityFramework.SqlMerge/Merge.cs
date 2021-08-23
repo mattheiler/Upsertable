@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Marvolo.EntityFramework.SqlMerge
@@ -48,7 +49,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             await using var source = await _source.CreateTableAsync(cancellationToken);
             await using var output = await _output.CreateTableAsync(cancellationToken);
 
-            await source.LoadAsync(context.Get(_target.EntityType.ClrType), connection, transaction, cancellationToken);
+            await source.LoadAsync(context, connection, transaction, cancellationToken);
 
             await _db.Database.ExecuteSqlRawAsync(ToSql(), cancellationToken);
 
@@ -57,6 +58,10 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         protected virtual Task PreProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
+            // TODO add better rule for pre and post processing
+            if (_target.EntityType.AsEntityType().IsImplicitlyCreatedJoinEntityType)
+                return Task.CompletedTask;
+
             var entities = context.Get(_target.EntityType.ClrType);
             var navigations = 
                 _target
@@ -80,6 +85,10 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         protected virtual async Task PostProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
+            // TODO add better rule for pre and post processing
+            if (_target.EntityType.AsEntityType().IsImplicitlyCreatedJoinEntityType)
+                return;
+
             var properties = _on.Properties.Union(_target.EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()).ToList();
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
 

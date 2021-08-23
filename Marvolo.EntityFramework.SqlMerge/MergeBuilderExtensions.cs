@@ -28,12 +28,12 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public static MergeBuilder<T> Insert<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> insert) where T : class
         {
-            return @this.WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).WithInserts(new MergeInsert(@this.EntityType.GetPropertiesAndNavigations(insert)));
+            return @this.WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).Insert(new MergeInsert(@this.EntityType.GetPropertiesAndNavigations(insert)));
         }
 
         public static MergeBuilder<T> On<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> on) where T : class
         {
-            return @this.WithOn(new MergeOn(@this.EntityType.GetPropertiesAndNavigations(on).Cast<IProperty>()));
+            return @this.On(new MergeOn(@this.EntityType.GetPropertiesAndNavigations(on).Cast<IProperty>()));
         }
 
         public static MergeBuilder<T> Update<T>(this MergeBuilder<T> @this) where T : class
@@ -43,7 +43,7 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public static MergeBuilder<T> Update<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> update) where T : class
         {
-            return @this.WithBehavior(MergeBehavior.WhenMatchedThenUpdate).WithUpdates(new MergeUpdate(@this.EntityType.GetPropertiesAndNavigations(update)));
+            return @this.WithBehavior(MergeBehavior.WhenMatchedThenUpdate).Update(new MergeUpdate(@this.EntityType.GetPropertiesAndNavigations(update)));
         }
 
         private static IEnumerable<IPropertyBase> GetPropertiesAndNavigations<T, TProperty>(this IEntityType @this, Expression<Func<T, TProperty>> lambda)
