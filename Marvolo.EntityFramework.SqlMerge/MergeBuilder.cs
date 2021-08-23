@@ -13,21 +13,21 @@ namespace Marvolo.EntityFramework.SqlMerge
 {
     public class MergeBuilder : IMergeBuilder
     {
-        protected readonly DbContext Db;
-        protected readonly ICollection<IMergeBuilder> Dependents = new List<IMergeBuilder>();
-        protected readonly List<INavigationBase> Navigations = new();
-        protected readonly ICollection<IMergeBuilder> Principals = new List<IMergeBuilder>();
+        private readonly DbContext _db;
+        private readonly ICollection<IMergeBuilder> _dependents = new List<IMergeBuilder>();
+        private readonly List<INavigationBase> _navigations = new();
+        private readonly ICollection<IMergeBuilder> _principals = new List<IMergeBuilder>();
 
-        protected MergeBehavior Behavior;
-        protected MergeInsert Insert;
-        protected MergeOn On;
-        protected IMergeSourceBuilder SourceBuilder;
-        protected IMergeSourceLoader SourceLoader;
-        protected MergeUpdate Update;
+        private MergeBehavior _behavior;
+        private MergeInsert _insert;
+        private MergeOn _on;
+        private IMergeSourceBuilder _sourceBuilder;
+        private IMergeSourceLoader _sourceLoader;
+        private MergeUpdate _update;
 
         public MergeBuilder(DbContext db, MergeContext context, IEntityType entityType)
         {
-            Db = db;
+            _db = db;
             Context = context;
             EntityType = entityType;
         }
@@ -38,8 +38,8 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public IMerge ToMerge()
         {
-            var builder = SourceBuilder ?? Db.GetService<IMergeSourceBuilder>();
-            var loader = SourceLoader ?? Db.GetService<IMergeSourceLoader>();
+            var builder = _sourceBuilder ?? _db.GetService<IMergeSourceBuilder>();
+            var loader = _sourceLoader ?? _db.GetService<IMergeSourceLoader>();
             var keys = EntityType.FindPrimaryKey().Properties;
             var navigations =
                 from navigation in EntityType.GetNavigations()
@@ -50,11 +50,11 @@ namespace Marvolo.EntityFramework.SqlMerge
             var properties = EntityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
             var target = new MergeTarget(EntityType);
-            var source = new MergeSource(Db, properties, builder, loader);
-            var on = On ?? new MergeOn(keys);
-            var insert = Behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? Insert ?? new MergeInsert(properties) : null;
-            var update = Behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? Update ?? new MergeUpdate(properties) : null;
-            var output = new MergeOutput(Db, on.Properties.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
+            var source = new MergeSource(_db, properties, builder, loader);
+            var on = _on ?? new MergeOn(keys);
+            var insert = _behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? _insert ?? new MergeInsert(properties) : null;
+            var update = _behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? _update ?? new MergeUpdate(properties) : null;
+            var output = new MergeOutput(_db, on.Properties.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
 
             //if (EntityType.IsPropertyBag)
             //{
@@ -73,7 +73,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             //}
 
             foreach (var entity in Context.Get(EntityType.ClrType))
-            foreach (var navigationBase in Navigations)
+            foreach (var navigationBase in _navigations)
             {
                 switch (navigationBase)
                 {
@@ -101,46 +101,46 @@ namespace Marvolo.EntityFramework.SqlMerge
                 }
             }
 
-            var principals = Principals.Select(principal => principal.ToMerge());
-            var dependents = Dependents.Select(dependent => dependent.ToMerge());
-            var merge = new Merge(Db, target, source, on, Behavior, insert, update, output);
+            var principals = _principals.Select(principal => principal.ToMerge());
+            var dependents = _dependents.Select(dependent => dependent.ToMerge());
+            var merge = new Merge(_db, target, source, on, _behavior, insert, update, output);
 
             return new MergeComposite(principals.Append(merge).Concat(dependents));
         }
 
         public MergeBuilder Using(IMergeSourceBuilder builder)
         {
-            SourceBuilder = builder;
+            _sourceBuilder = builder;
             return this;
         }
 
         public MergeBuilder Using(IMergeSourceLoader loader)
         {
-            SourceLoader = loader;
+            _sourceLoader = loader;
             return this;
         }
 
-        public MergeBuilder WithOn(MergeOn on)
+        public MergeBuilder On(MergeOn on)
         {
-            On = on;
+            _on = on;
             return this;
         }
 
         public MergeBuilder WithBehavior(MergeBehavior behavior, bool enable = true)
         {
-            Behavior = enable ? Behavior | behavior : Behavior & ~behavior;
+            _behavior = enable ? _behavior | behavior : _behavior & ~behavior;
             return this;
         }
 
-        public MergeBuilder WithInserts(MergeInsert insert)
+        public MergeBuilder Insert(MergeInsert insert)
         {
-            Insert = insert;
+            _insert = insert;
             return this;
         }
 
-        public MergeBuilder WithUpdates(MergeUpdate update)
+        public MergeBuilder Update(MergeUpdate update)
         {
-            Update = update;
+            _update = update;
             return this;
         }
 
@@ -150,7 +150,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             if (navigationBase == null)
                 throw new ArgumentException("Expression body must describe a navigation property.");
 
-            var builder = new MergeBuilder<TProperty>(Db, Context);
+            var builder = new MergeBuilder<TProperty>(_db, Context);
 
             build(builder);
 
@@ -158,29 +158,29 @@ namespace Marvolo.EntityFramework.SqlMerge
             {
                 case ISkipNavigation skipNavigation:
                 {
-                    var skip = new MergeBuilder(Db, Context, skipNavigation.JoinEntityType).WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert);
+                    var skip = new MergeBuilder(_db, Context, skipNavigation.JoinEntityType).WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert);
 
                     if (skipNavigation.IsOnDependent)
-                        builder.Dependents.Add(skip);
+                        builder._dependents.Add(skip);
                     else
-                        Dependents.Add(skip);
+                        _dependents.Add(skip);
 
-                    Principals.Add(builder);
+                    _principals.Add(builder);
                     break;
                 }
                 case INavigation navigation:
                 {
                     if (navigation.IsOnDependent)
-                        Principals.Add(builder);
+                        _principals.Add(builder);
                     else
-                        Dependents.Add(builder);
+                        _dependents.Add(builder);
                     break;
                 }
                 default:
                     throw new NotSupportedException("Unknown navigation type.");
             }
 
-            Navigations.Add(navigationBase);
+            _navigations.Add(navigationBase);
 
             return this;
         }
@@ -220,7 +220,7 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public new MergeBuilder<T> WithOn(MergeOn on)
         {
-            return (MergeBuilder<T>) base.WithOn(on);
+            return (MergeBuilder<T>) base.On(on);
         }
 
         public new MergeBuilder<T> WithBehavior(MergeBehavior behavior, bool enable = true)
@@ -230,12 +230,12 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public new MergeBuilder<T> WithInserts(MergeInsert insert)
         {
-            return (MergeBuilder<T>) base.WithInserts(insert);
+            return (MergeBuilder<T>) base.Insert(insert);
         }
 
         public new MergeBuilder<T> WithUpdates(MergeUpdate update)
         {
-            return (MergeBuilder<T>) base.WithUpdates(update);
+            return (MergeBuilder<T>) base.Update(update);
         }
     }
 }
