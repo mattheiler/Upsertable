@@ -21,11 +21,25 @@ namespace Marvolo.EntityFramework.SqlMerge
         private readonly MergeInsert _insert;
         private readonly MergeOn _on;
         private readonly MergeOutput _output;
+        private readonly IEntityResolver _entityResolver;
+        private readonly IReadOnlyCollection<INavigation> _navigations;
         private readonly MergeSource _source;
         private readonly MergeTarget _target;
         private readonly MergeUpdate _update;
 
-        public Merge(DbContext db, MergeTarget target, MergeSource source, MergeOn on, MergeBehavior behavior, MergeInsert insert, MergeUpdate update, MergeOutput output)
+        public Merge
+        (
+            DbContext db,
+            MergeTarget target,
+            MergeSource source,
+            MergeOn on,
+            MergeBehavior behavior,
+            MergeInsert insert,
+            MergeUpdate update,
+            MergeOutput output,
+            IEntityResolver entityResolver,
+            IEnumerable<INavigation> navigations
+        )
         {
             _db = db;
             _target = target;
@@ -35,44 +49,40 @@ namespace Marvolo.EntityFramework.SqlMerge
             _insert = insert;
             _update = update;
             _output = output;
+            _entityResolver = entityResolver;
+            _navigations = navigations.ToList().AsReadOnly();
         }
 
-        public async Task ExecuteAsync(MergeContext context, CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var connection = (SqlConnection) _db.Database.GetDbConnection();
             var transaction = (SqlTransaction) _db.Database.CurrentTransaction?.GetDbTransaction();
             if (connection.State == ConnectionState.Closed)
                 await connection.OpenAsync(cancellationToken);
 
-            await PreProcessAsync(context, connection, transaction, cancellationToken);
+            var entities = _entityResolver.Resolve().Cast<object>().ToDictionary(_on.Properties.GetValues, MergeOnEqualityComparer.Default);
+
+            await PreProcessAsync(entities, connection, transaction, cancellationToken);
 
             await using var source = await _source.CreateTableAsync(cancellationToken);
             await using var output = await _output.CreateTableAsync(cancellationToken);
 
-            await source.LoadAsync(context, connection, transaction, cancellationToken);
+            await source.LoadAsync(entities.Values, connection, transaction, cancellationToken);
 
             await _db.Database.ExecuteSqlRawAsync(ToSql(), cancellationToken);
 
-            await PostProcessAsync(context, connection, transaction, cancellationToken);
+            await PostProcessAsync(entities, connection, transaction, cancellationToken);
         }
 
-        protected virtual Task PreProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        protected virtual Task PreProcessAsync(IDictionary<IEnumerable<object>, object> entities, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            // TODO add better rule for pre and post processing
-            if (_target.EntityType.AsEntityType().IsImplicitlyCreatedJoinEntityType)
-                return Task.CompletedTask;
-
-            var entities = context.Get(_target.EntityType.ClrType);
             var navigations = 
-                _target
-                    .EntityType
-                    .GetNavigations()
+                _navigations
                     .Where(navigation => navigation.IsOnDependent)
                     .Where(navigation => !navigation.DeclaringEntityType.IsOwned())
-                    .Where(navigation => context.Contains(navigation.DeclaringEntityType.ClrType))
                     .ToList();
 
-            foreach (var entity in entities)
+            foreach (var entity in entities.Values)
             foreach (var navigation in navigations)
             {
                 var value = navigation.GetValue(entity);
@@ -83,12 +93,8 @@ namespace Marvolo.EntityFramework.SqlMerge
             return Task.CompletedTask;
         }
 
-        protected virtual async Task PostProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        protected virtual async Task PostProcessAsync(IDictionary<IEnumerable<object>, object> entities, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            // TODO add better rule for pre and post processing
-            if (_target.EntityType.AsEntityType().IsImplicitlyCreatedJoinEntityType)
-                return;
-
             var properties = _on.Properties.Union(_target.EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()).ToList();
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
 
@@ -98,14 +104,10 @@ namespace Marvolo.EntityFramework.SqlMerge
             if (!reader.HasRows)
                 return;
 
-            var entities = context.Get(_target.EntityType.ClrType).Cast<object>().ToDictionary(_on.Properties.GetValues, MergeOnEqualityComparer.Default);
-            var navigations = 
-                _target
-                    .EntityType
-                    .GetNavigations()
+            var navigations =
+                _navigations
                     .Where(navigation => !navigation.IsOnDependent)
                     .Where(navigation => !navigation.ForeignKey.DeclaringEntityType.IsOwned())
-                    .Where(navigation => context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType))
                     .ToList();
 
             var values = new object[properties.Count];

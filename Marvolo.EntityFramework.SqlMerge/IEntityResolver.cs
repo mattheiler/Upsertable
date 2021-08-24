@@ -2,8 +2,8 @@
 
 namespace Marvolo.EntityFramework.SqlMerge
 {
-    public interface IMergeResolver
+    public interface IEntityResolver
     {
-        IEnumerable Resolve(MergeContext context);
+        IEnumerable Resolve();
     }
 }

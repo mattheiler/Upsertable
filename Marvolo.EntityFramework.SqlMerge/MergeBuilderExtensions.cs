@@ -11,9 +11,7 @@ namespace Marvolo.EntityFramework.SqlMerge
     {
         public static MergeBuilder<T> Merge<T>(this DbContext @this, IEnumerable<T> entities) where T : class
         {
-            var context = new MergeContext();
-            context.AddRange(entities);
-            return new MergeBuilder<T>(@this, context);
+            return new(@this, @this.Model.FindEntityType(typeof(T)), new ListEntityResolver<T>(entities));
         }
 
         public static MergeBuilder<T> Delete<T>(this MergeBuilder<T> @this) where T : class
@@ -70,40 +68,40 @@ namespace Marvolo.EntityFramework.SqlMerge
             switch (member.Expression)
             {
                 case MemberExpression caller:
-                    {
-                        var navigation = type.FindNavigation(caller.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{caller}'.");
-                        var entity = navigation.TargetEntityType;
-                        if (!entity.IsOwned())
-                            throw new InvalidOperationException($"Expected an owned navigation property: '{caller}'.");
+                {
+                    var navigation = type.FindNavigation(caller.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{caller}'.");
+                    var entity = navigation.TargetEntityType;
+                    if (!entity.IsOwned())
+                        throw new InvalidOperationException($"Expected an owned navigation property: '{caller}'.");
 
-                        var property = entity.FindProperty(member.Member) ?? throw new InvalidOperationException($"Expected a property: '{member}'.");
-                        if (property == null)
-                            throw new InvalidOperationException($"Expected a property: '{member}'.");
+                    var property = entity.FindProperty(member.Member) ?? throw new InvalidOperationException($"Expected a property: '{member}'.");
+                    if (property == null)
+                        throw new InvalidOperationException($"Expected a property: '{member}'.");
 
-                        yield return property;
+                    yield return property;
 
-                        break;
-                    }
+                    break;
+                }
                 case ParameterExpression _:
+                {
+                    var property = type.FindProperty(member.Member);
+                    if (property != null)
                     {
-                        var property = type.FindProperty(member.Member);
-                        if (property != null)
-                        {
-                            yield return property;
-                        }
-                        else
-                        {
-                            var navigation = type.FindNavigation(member.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{member}'.");
-                            var entity = type.Model.FindEntityType(navigation.ClrType);
-                            if (!entity.IsOwned())
-                                throw new InvalidOperationException($"Expected an owned navigation property: '{member}'.");
-
-                            foreach (var owned in entity.GetProperties())
-                                yield return owned;
-                        }
-
-                        break;
+                        yield return property;
                     }
+                    else
+                    {
+                        var navigation = type.FindNavigation(member.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{member}'.");
+                        var entity = type.Model.FindEntityType(navigation.ClrType);
+                        if (!entity.IsOwned())
+                            throw new InvalidOperationException($"Expected an owned navigation property: '{member}'.");
+
+                        foreach (var owned in entity.GetProperties())
+                            yield return owned;
+                    }
+
+                    break;
+                }
                 default:
                     throw new NotSupportedException();
             }

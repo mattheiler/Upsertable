@@ -12,15 +12,14 @@ namespace Marvolo.EntityFramework.SqlMerge
     {
         private readonly IMergeSourceBuilder _builder;
         private readonly DbContext _db;
-        private readonly IMergeResolver _resolver;
+        private readonly IEntityResolver _resolver;
         private readonly IMergeSourceLoader _loader;
         private readonly IList<IPropertyBase> _properties;
         private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-        public MergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IMergeResolver resolver, IMergeSourceBuilder builder, IMergeSourceLoader loader)
+        public MergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IMergeSourceBuilder builder, IMergeSourceLoader loader)
         {
             _db = db;
-            _resolver = resolver;
             _properties = properties.ToList();
             _builder = builder;
             _loader = loader;
@@ -49,7 +48,7 @@ namespace Marvolo.EntityFramework.SqlMerge
 
             await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
-            return new MergeSourceTable(this, _resolver, _builder, _loader);
+            return new MergeSourceTable(this, _builder, _loader);
         }
 
         internal async ValueTask DropTableAsync()
