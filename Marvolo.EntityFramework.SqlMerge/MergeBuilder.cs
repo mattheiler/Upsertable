@@ -17,7 +17,8 @@ namespace Marvolo.EntityFramework.SqlMerge
         private readonly DbContext _dbContext;
         private readonly IEntityResolver _entityResolver;
         private readonly IEntityType _entityType;
-        private readonly List<INavigation> _navigations = new();
+        private readonly List<INavigation> _principals = new();
+        private readonly List<INavigation> _dependents = new();
 
         private MergeBehavior _behavior;
         private MergeInsert _insert;
@@ -56,10 +57,22 @@ namespace Marvolo.EntityFramework.SqlMerge
             var insert = _behavior.HasFlag(MergeBehavior.WhenNotMatchedByTargetThenInsert) ? _insert ?? new MergeInsert(properties) : default;
             var update = _behavior.HasFlag(MergeBehavior.WhenMatchedThenUpdate) ? _update ?? new MergeUpdate(properties) : default;
             var output = new MergeOutput(_dbContext, on.Properties.Union(_entityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
-            var merge = new Merge(_dbContext, target, source, on, _behavior, insert, update, output, _entityResolver, _navigations);
+            var merge = new Merge(_dbContext, target, source, on, _behavior, insert, update, output, _entityResolver, _principals, _dependents);
 
             var composite = new MergeComposite(_before.Append(merge).Concat(_after));
             return composite;
+        }
+
+        public MergeBuilder MergeBefore(IMerge merge)
+        {
+            _after.Add(merge);
+            return this;
+        }
+
+        public MergeBuilder MergeAfter(IMerge merge)
+        {
+            _before.Add(merge);
+            return this;
         }
 
         public MergeBuilder On(MergeOn on)
@@ -98,6 +111,18 @@ namespace Marvolo.EntityFramework.SqlMerge
             return this;
         }
 
+        public MergeBuilder WithPrincipal(INavigation navigation)
+        {
+            _principals.Add(navigation);
+            return this;
+        }
+
+        public MergeBuilder WithDependent(INavigation navigation)
+        {
+            _dependents.Add(navigation);
+            return this;
+        }
+
         protected MergeBuilder Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
         {
             var navigationBase = property.Body is MemberExpression body ? _entityType.FindNavigation(body.Member) ?? _entityType.FindSkipNavigation(body.Member) as INavigationBase : default;
@@ -108,37 +133,28 @@ namespace Marvolo.EntityFramework.SqlMerge
 
             build(builder);
 
-            var merge = builder.ToMerge();
-
             switch (navigationBase)
             {
                 case ISkipNavigation skipNavigation:
                 {
-                    _after.Add(merge);
-
-                    var skip =
+                    var joins =
                         new MergeBuilder(_dbContext, skipNavigation.JoinEntityType, new JoinEntityResolver(_dbContext, skipNavigation, _entityResolver))
                             .WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert)
                             .ToMerge();
 
-                    _after.Add(skip);
-                    break;
+                    return skipNavigation.IsOnDependent
+                        ? MergeAfter(builder.MergeBefore(joins).ToMerge())
+                        : MergeBefore(builder.ToMerge()).MergeBefore(joins);
                 }
                 case INavigation navigation:
                 {
-                    if (navigation.IsOnDependent)
-                        _before.Add(merge);
-                    else
-                        _after.Add(merge);
-
-                    _navigations.Add(navigation);
-                    break;
+                    return navigation.IsOnDependent
+                        ? MergeAfter(builder.ToMerge()).WithPrincipal(navigation)
+                        : MergeBefore(builder.ToMerge()).WithDependent(navigation);
                 }
                 default:
                     throw new NotSupportedException("Unknown navigation type.");
             }
-
-            return this;
         }
 
         public Task ExecuteAsync(CancellationToken cancellationToken = default)

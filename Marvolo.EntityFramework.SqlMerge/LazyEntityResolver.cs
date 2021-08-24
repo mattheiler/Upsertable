@@ -26,9 +26,11 @@ namespace Marvolo.EntityFramework.SqlMerge
             foreach (var source in _declaringEntityResolver.Resolve())
             {
                 var value = _navigation.GetValue(source);
+                if (value == null)
+                    continue;
 
                 if (_navigation.IsCollection)
-                    foreach (var item in (ICollection)value)
+                    foreach (var item in (ICollection) value)
                         yield return item;
                 else
                     yield return value;
