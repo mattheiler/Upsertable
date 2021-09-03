@@ -17,14 +17,30 @@ namespace Marvolo.EntityFramework.SqlMerge
     {
         private readonly MergeBehavior _behavior;
         private readonly DbContext _db;
+        private readonly IReadOnlyCollection<INavigation> _dependents;
+        private readonly IEntityResolver _entityResolver;
         private readonly MergeInsert _insert;
         private readonly MergeOn _on;
         private readonly MergeOutput _output;
+        private readonly IReadOnlyCollection<INavigation> _principals;
         private readonly MergeSource _source;
         private readonly MergeTarget _target;
         private readonly MergeUpdate _update;
 
-        public Merge(DbContext db, MergeTarget target, MergeSource source, MergeOn on, MergeBehavior behavior, MergeInsert insert, MergeUpdate update, MergeOutput output)
+        public Merge
+        (
+            DbContext db,
+            MergeTarget target,
+            MergeSource source,
+            MergeOn on,
+            MergeBehavior behavior,
+            MergeInsert insert,
+            MergeUpdate update,
+            MergeOutput output,
+            IEntityResolver entityResolver,
+            IEnumerable<INavigation> principals,
+            IEnumerable<INavigation> dependents
+        )
         {
             _db = db;
             _target = target;
@@ -34,41 +50,36 @@ namespace Marvolo.EntityFramework.SqlMerge
             _insert = insert;
             _update = update;
             _output = output;
+            _entityResolver = entityResolver;
+            _principals = principals.ToList().AsReadOnly();
+            _dependents = dependents.ToList().AsReadOnly();
         }
 
-        public async Task ExecuteAsync(MergeContext context, CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var connection = (SqlConnection) _db.Database.GetDbConnection();
             var transaction = (SqlTransaction) _db.Database.CurrentTransaction?.GetDbTransaction();
             if (connection.State == ConnectionState.Closed)
                 await connection.OpenAsync(cancellationToken);
 
-            await PreProcessAsync(context, connection, transaction, cancellationToken);
+            var entities = _entityResolver.Resolve().Cast<object>().ToList();
+
+            await PreProcessAsync(entities, connection, transaction, cancellationToken);
 
             await using var source = await _source.CreateTableAsync(cancellationToken);
             await using var output = await _output.CreateTableAsync(cancellationToken);
 
-            await source.LoadAsync(context.Get(_target.EntityType.ClrType), connection, transaction, cancellationToken);
+            await source.LoadAsync(entities, connection, transaction, cancellationToken);
 
             await _db.Database.ExecuteSqlRawAsync(ToSql(), cancellationToken);
 
-            await PostProcessAsync(context, connection, transaction, cancellationToken);
+            await PostProcessAsync(entities, connection, transaction, cancellationToken);
         }
 
-        protected virtual Task PreProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        protected virtual Task PreProcessAsync(IEnumerable<object> entities, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            var entities = context.Get(_target.EntityType.ClrType);
-            var navigations = 
-                _target
-                    .EntityType
-                    .GetNavigations()
-                    .Where(navigation => navigation.IsDependentToPrincipal())
-                    .Where(navigation => !navigation.DeclaringEntityType.IsOwned())
-                    .Where(navigation => context.Contains(navigation.DeclaringEntityType.ClrType))
-                    .ToList();
-
             foreach (var entity in entities)
-            foreach (var navigation in navigations)
+            foreach (var navigation in _principals)
             {
                 var value = navigation.GetValue(entity);
                 if (value != null)
@@ -78,7 +89,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             return Task.CompletedTask;
         }
 
-        protected virtual async Task PostProcessAsync(MergeContext context, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        protected virtual async Task PostProcessAsync(IEnumerable<object> entities, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var properties = _on.Properties.Union(_target.EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()).ToList();
             var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnName()}]"))} FROM [{_output.GetTableName()}]";
@@ -89,16 +100,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             if (!reader.HasRows)
                 return;
 
-            var entities = context.Get(_target.EntityType.ClrType).Cast<object>().ToDictionary(_on.Properties.GetValues, MergeOnEqualityComparer.Default);
-            var navigations = 
-                _target
-                    .EntityType
-                    .GetNavigations()
-                    .Where(navigation => !navigation.IsDependentToPrincipal())
-                    .Where(navigation => !navigation.ForeignKey.DeclaringEntityType.IsOwned())
-                    .Where(navigation => context.Contains(navigation.ForeignKey.DeclaringEntityType.ClrType))
-                    .ToList();
-
+            var lookup = entities.ToDictionary(_on.Properties.GetValues, MergeOnEqualityComparer.Default);
             var values = new object[properties.Count];
 
             while (await reader.ReadAsync(cancellationToken))
@@ -122,18 +124,18 @@ namespace Marvolo.EntityFramework.SqlMerge
                     values[index] = value;
                 }
 
-                if (!entities.TryGetValue(values.Take(_on.Properties.Count), out var entity))
+                if (!lookup.TryGetValue(values.Take(_on.Properties.Count), out var entity))
                     throw new InvalidOperationException("Couldn't find the original entity.");
 
                 properties.SetValues(entity, values);
 
-                foreach (var navigation in navigations)
+                foreach (var navigation in _dependents)
                 {
                     var value = navigation.GetValue(entity);
                     if (value == null)
                         continue;
 
-                    if (navigation.IsCollection())
+                    if (navigation.IsCollection)
                         foreach (var item in (IEnumerable) value)
                             navigation.ForeignKey.Properties.SetValues(item, navigation.ForeignKey.PrincipalKey.Properties.GetValues(entity));
                     else
@@ -176,10 +178,7 @@ namespace Marvolo.EntityFramework.SqlMerge
                 command.AppendLine($"WHEN NOT MATCHED BY TARGET THEN INSERT ({string.Join(", ", columns)}) VALUES ({string.Join(", ", columns.Select(column => $"[S].[{column}]"))})");
             }
 
-            if (_behavior.HasFlag(MergeBehavior.WhenNotMatchedBySourceThenDelete))
-            {
-                command.AppendLine("WHEN NOT MATCHED BY SOURCE THEN DELETE");
-            }
+            if (_behavior.HasFlag(MergeBehavior.WhenNotMatchedBySourceThenDelete)) command.AppendLine("WHEN NOT MATCHED BY SOURCE THEN DELETE");
 
             var output =
                 _output
@@ -205,7 +204,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             return member switch
             {
                 IProperty property => GetColumnsForUpdate(new[] { property }),
-                INavigation navigation => GetColumnsForUpdate(navigation.GetTargetType().GetProperties()),
+                INavigation navigation => GetColumnsForUpdate(navigation.TargetEntityType.GetProperties()),
                 _ => throw new NotSupportedException("Property or navigation type not supported.")
             };
         }
@@ -229,7 +228,7 @@ namespace Marvolo.EntityFramework.SqlMerge
             return member switch
             {
                 IProperty property => GetColumnsForInsert(new[] { property }),
-                INavigation navigation => GetColumnsForInsert(navigation.GetTargetType().GetProperties()),
+                INavigation navigation => GetColumnsForInsert(navigation.TargetEntityType.GetProperties()),
                 _ => throw new NotSupportedException("Property or navigation type not supported.")
             };
         }

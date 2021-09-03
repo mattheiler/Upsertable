@@ -8,7 +8,7 @@ namespace Marvolo.EntityFramework.SqlMerge.SqlDataAdapter.Extensions
         {
             var options = new SqlDataAdapterMergeSourceLoaderOptions();
             configure?.Invoke(options);
-            return @this.Using(new SqlDataAdapterMergeSourceLoader(options));
+            return @this.WithSourceLoader(new SqlDataAdapterMergeSourceLoader(options));
         }
     }
 }

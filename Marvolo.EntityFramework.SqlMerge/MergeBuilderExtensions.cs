@@ -11,24 +11,22 @@ namespace Marvolo.EntityFramework.SqlMerge
     {
         public static MergeBuilder<T> Merge<T>(this DbContext @this, IEnumerable<T> entities) where T : class
         {
-            var context = new MergeContext();
-            context.AddRange(entities);
-            return new MergeBuilder<T>(@this, context);
+            return new(@this, @this.Model.FindEntityType(typeof(T)), new ListEntityResolver<T>(entities));
         }
 
         public static MergeBuilder<T> Delete<T>(this MergeBuilder<T> @this) where T : class
         {
-            return @this.Behavior(MergeBehavior.WhenNotMatchedBySourceThenDelete);
+            return @this.WithBehavior(MergeBehavior.WhenNotMatchedBySourceThenDelete);
         }
 
         public static MergeBuilder<T> Insert<T>(this MergeBuilder<T> @this) where T : class
         {
-            return @this.Behavior(MergeBehavior.WhenNotMatchedByTargetThenInsert);
+            return @this.WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert);
         }
 
         public static MergeBuilder<T> Insert<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> insert) where T : class
         {
-            return @this.Behavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).Insert(new MergeInsert(@this.EntityType.GetPropertiesAndNavigations(insert)));
+            return @this.WithBehavior(MergeBehavior.WhenNotMatchedByTargetThenInsert).Insert(new MergeInsert(@this.EntityType.GetPropertiesAndNavigations(insert)));
         }
 
         public static MergeBuilder<T> On<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> on) where T : class
@@ -38,12 +36,12 @@ namespace Marvolo.EntityFramework.SqlMerge
 
         public static MergeBuilder<T> Update<T>(this MergeBuilder<T> @this) where T : class
         {
-            return @this.Behavior(MergeBehavior.WhenMatchedThenUpdate);
+            return @this.WithBehavior(MergeBehavior.WhenMatchedThenUpdate);
         }
 
         public static MergeBuilder<T> Update<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> update) where T : class
         {
-            return @this.Behavior(MergeBehavior.WhenMatchedThenUpdate).Update(new MergeUpdate(@this.EntityType.GetPropertiesAndNavigations(update)));
+            return @this.WithBehavior(MergeBehavior.WhenMatchedThenUpdate).Update(new MergeUpdate(@this.EntityType.GetPropertiesAndNavigations(update)));
         }
 
         private static IEnumerable<IPropertyBase> GetPropertiesAndNavigations<T, TProperty>(this IEntityType @this, Expression<Func<T, TProperty>> lambda)
@@ -70,40 +68,40 @@ namespace Marvolo.EntityFramework.SqlMerge
             switch (member.Expression)
             {
                 case MemberExpression caller:
-                    {
-                        var navigation = type.FindNavigation(caller.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{caller}'.");
-                        var entity = navigation.GetTargetType();
-                        if (!entity.IsOwned())
-                            throw new InvalidOperationException($"Expected an owned navigation property: '{caller}'.");
+                {
+                    var navigation = type.FindNavigation(caller.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{caller}'.");
+                    var entity = navigation.TargetEntityType;
+                    if (!entity.IsOwned())
+                        throw new InvalidOperationException($"Expected an owned navigation property: '{caller}'.");
 
-                        var property = entity.FindProperty(member.Member) ?? throw new InvalidOperationException($"Expected a property: '{member}'.");
-                        if (property == null)
-                            throw new InvalidOperationException($"Expected a property: '{member}'.");
+                    var property = entity.FindProperty(member.Member) ?? throw new InvalidOperationException($"Expected a property: '{member}'.");
+                    if (property == null)
+                        throw new InvalidOperationException($"Expected a property: '{member}'.");
 
-                        yield return property;
+                    yield return property;
 
-                        break;
-                    }
+                    break;
+                }
                 case ParameterExpression _:
+                {
+                    var property = type.FindProperty(member.Member);
+                    if (property != null)
                     {
-                        var property = type.FindProperty(member.Member);
-                        if (property != null)
-                        {
-                            yield return property;
-                        }
-                        else
-                        {
-                            var navigation = type.FindNavigation(member.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{member}'.");
-                            var entity = type.Model.FindEntityType(navigation.ClrType);
-                            if (!entity.IsOwned())
-                                throw new InvalidOperationException($"Expected an owned navigation property: '{member}'.");
-
-                            foreach (var owned in entity.GetProperties())
-                                yield return owned;
-                        }
-
-                        break;
+                        yield return property;
                     }
+                    else
+                    {
+                        var navigation = type.FindNavigation(member.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{member}'.");
+                        var entity = type.Model.FindEntityType(navigation.ClrType);
+                        if (!entity.IsOwned())
+                            throw new InvalidOperationException($"Expected an owned navigation property: '{member}'.");
+
+                        foreach (var owned in entity.GetProperties())
+                            yield return owned;
+                    }
+
+                    break;
+                }
                 default:
                     throw new NotSupportedException();
             }

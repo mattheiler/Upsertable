@@ -12,6 +12,7 @@ namespace Marvolo.EntityFramework.SqlMerge
     {
         private readonly IMergeSourceBuilder _builder;
         private readonly DbContext _db;
+        private readonly IEntityResolver _resolver;
         private readonly IMergeSourceLoader _loader;
         private readonly IList<IPropertyBase> _properties;
         private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
