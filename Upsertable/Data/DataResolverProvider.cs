@@ -1,7 +1,7 @@
 ﻿using System;
-using Upsertable.EntityFramework.Abstractions;
+using Upsertable.Abstractions;
 
-namespace Upsertable.EntityFramework.Data
+namespace Upsertable.Data
 {
     public class DataResolverProvider
     {

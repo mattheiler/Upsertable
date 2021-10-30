@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.SqlServer.Storage.ValueConversion.Internal;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
-using Upsertable.EntityFramework.Data;
+using Upsertable.Data;
 
 namespace Upsertable.SqlServer.NetTopologySuite.Data
 {

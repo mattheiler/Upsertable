@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Upsertable.EntityFramework.Data
+namespace Upsertable.Data
 {
     public class DataResolverRegistry
     {

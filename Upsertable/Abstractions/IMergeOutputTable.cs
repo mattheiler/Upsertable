@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Upsertable.EntityFramework.Abstractions
+namespace Upsertable.Abstractions
 {
     public interface IMergeOutputTable : IAsyncDisposable
     {

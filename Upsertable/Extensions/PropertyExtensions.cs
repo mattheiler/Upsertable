@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.EntityFramework.Extensions
+namespace Upsertable.Extensions
 {
     public static class PropertyExtensions
     {

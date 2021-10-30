@@ -4,9 +4,9 @@ using System.Data;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.EntityFramework.Abstractions;
+using Upsertable.Abstractions;
 
-namespace Upsertable.EntityFramework.Data
+namespace Upsertable.Data
 {
     public class DataTableFactory : IDataTableFactory
     {

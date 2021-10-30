@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Upsertable.Abstractions;
 using Upsertable.SqlServer.Infrastructure;
 
 namespace Upsertable.SqlServer.SqlBulkCopy.Infrastructure.Extensions

@@ -9,7 +9,7 @@ namespace Upsertable.SqlServer.SqlBulkCopy.Infrastructure.Extensions
     {
         public static SqlServerDbContextOptionsBuilder UseMergeWithSqlBulkCopy(this SqlServerDbContextOptionsBuilder @this, Action<SqlBulkCopyDataTableLoaderOptions> configure = default)
         {
-            return @this.UseMerge(merge => SqlBulkCopyMergeSqlServerDbContextOptionsBuilderExtensions.UseSqlBulkCopy(merge, configure));
+            return @this.UseMerge(merge => merge.UseSqlBulkCopy(configure));
         }
 
         public static SqlServerDbContextOptionsBuilder UseMergeWithSqlBulkCopy(this SqlServerDbContextOptionsBuilder @this, ServiceLifetime lifetime, Action<SqlBulkCopyDataTableLoaderOptions> configure = default)

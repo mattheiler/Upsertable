@@ -5,6 +5,8 @@ using System.Text;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Upsertable.Abstractions;
+using Upsertable.Data;
 
 namespace Upsertable.SqlServer.Infrastructure
 {

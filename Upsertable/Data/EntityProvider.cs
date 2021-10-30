@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
-using Upsertable.EntityFramework.Extensions;
+using Upsertable.Extensions;
 
-namespace Upsertable.EntityFramework.Data
+namespace Upsertable.Data
 {
     public static class EntityProvider
     {

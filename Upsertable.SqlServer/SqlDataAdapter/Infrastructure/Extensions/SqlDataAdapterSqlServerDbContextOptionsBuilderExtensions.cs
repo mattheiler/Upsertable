@@ -9,7 +9,7 @@ namespace Upsertable.SqlServer.SqlDataAdapter.Infrastructure.Extensions
     {
         public static SqlServerDbContextOptionsBuilder UseMergeWithSqlDataAdapter(this SqlServerDbContextOptionsBuilder @this, Action<SqlDataAdapterDataTableLoaderOptions> configure = default)
         {
-            return @this.UseMerge(merge => SqlDataAdapterMergeSqlServerDbContextOptionsBuilderExtensions.UseSqlDataAdapter(merge, configure));
+            return @this.UseMerge(merge => merge.UseSqlDataAdapter(configure));
         }
 
         public static SqlServerDbContextOptionsBuilder UseMergeWithSqlDataAdapter(this SqlServerDbContextOptionsBuilder @this, ServiceLifetime lifetime, Action<SqlDataAdapterDataTableLoaderOptions> configure = default)

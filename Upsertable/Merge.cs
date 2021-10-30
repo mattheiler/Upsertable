@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
-using Upsertable.EntityFramework.Abstractions;
-using Upsertable.EntityFramework.Data;
+using Upsertable.Abstractions;
+using Upsertable.Data;
 
-namespace Upsertable.EntityFramework
+namespace Upsertable
 {
     public abstract class Merge : IMerge
     {
-        protected readonly DbContext Db;
-        protected readonly IEntityType Target;
-        protected readonly IMergeSource Source;
-        protected readonly IReadOnlyCollection<IProperty> On;
         protected readonly MergeBehavior Behavior;
-        protected readonly IReadOnlyCollection<IPropertyBase> Insert;
-        protected readonly IReadOnlyCollection<IPropertyBase> Update;
-        protected readonly IMergeOutput Output;
-        protected readonly EntityProviderFunc EntityProvider;
-        protected readonly IReadOnlyCollection<INavigation> Principals;
+        protected readonly DbContext Db;
         protected readonly IReadOnlyCollection<INavigation> Dependents;
+        protected readonly EntityProviderFunc EntityProvider;
+        protected readonly IReadOnlyCollection<IPropertyBase> Insert;
+        protected readonly IReadOnlyCollection<IProperty> On;
+        protected readonly IMergeOutput Output;
+        protected readonly IReadOnlyCollection<INavigation> Principals;
+        protected readonly IMergeSource Source;
+        protected readonly IEntityType Target;
+        protected readonly IReadOnlyCollection<IPropertyBase> Update;
 
         protected Merge
         (

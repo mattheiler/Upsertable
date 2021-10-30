@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Upsertable.Abstractions;
 
 namespace Upsertable.SqlServer
 {

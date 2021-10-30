@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Upsertable.EntityFramework.Abstractions
+namespace Upsertable.Abstractions
 {
     public interface IMergeSourceTable : IAsyncDisposable
     {

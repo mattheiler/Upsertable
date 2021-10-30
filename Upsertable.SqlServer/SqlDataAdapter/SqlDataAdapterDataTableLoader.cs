@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Upsertable.Abstractions;
 
 namespace Upsertable.SqlServer.SqlDataAdapter
 {

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.EntityFramework.Abstractions
+namespace Upsertable.Abstractions
 {
     public interface IMergeOutput
     {

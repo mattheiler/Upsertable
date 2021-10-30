@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Upsertable.EntityFramework.Abstractions
+namespace Upsertable.Abstractions
 {
     public interface IMerge
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Upsertable.EntityFramework
+namespace Upsertable
 {
     [Flags]
     public enum MergeBehavior

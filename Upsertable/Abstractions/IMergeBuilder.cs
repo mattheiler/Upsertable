@@ -1,4 +1,4 @@
-﻿namespace Upsertable.EntityFramework.Abstractions
+﻿namespace Upsertable.Abstractions
 {
     public interface IMergeBuilder
     {

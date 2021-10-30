@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Upsertable.Abstractions;
+using Upsertable.Data;
+using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer
 {

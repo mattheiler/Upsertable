@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Upsertable.Abstractions;
 
 namespace Upsertable.SqlServer.Infrastructure
 {

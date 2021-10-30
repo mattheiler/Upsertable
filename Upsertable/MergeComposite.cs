@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Upsertable.EntityFramework.Abstractions;
+using Upsertable.Abstractions;
 
-namespace Upsertable.EntityFramework
+namespace Upsertable
 {
     public class MergeComposite : IMerge
     {

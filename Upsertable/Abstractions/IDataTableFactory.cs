@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Data;
 
-namespace Upsertable.EntityFramework.Abstractions
+namespace Upsertable.Abstractions
 {
     public interface IDataTableFactory
     {

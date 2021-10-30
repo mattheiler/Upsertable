@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Upsertable.Abstractions;
+using Upsertable.Data;
 
 namespace Upsertable.SqlServer
 {
@@ -21,11 +23,11 @@ namespace Upsertable.SqlServer
         private readonly List<INavigation> _principals = new();
 
         private MergeBehavior _behavior;
-        private IDataTableFactory _dataTableResolver;
         private IDataTableLoader _dataTableLoader;
+        private IDataTableFactory _dataTableResolver;
+        private IReadOnlyCollection<IPropertyBase> _insert;
 
         private IReadOnlyCollection<IProperty> _on;
-        private IReadOnlyCollection<IPropertyBase> _insert;
         private IReadOnlyCollection<IPropertyBase> _update;
 
         public SqlServerMergeBuilder(DbContext dbContext, IEntityType entityType, EntityProviderFunc entityProviderFunc)

@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace Upsertable.EntityFramework.Data
+namespace Upsertable.Data
 {
     public delegate IEnumerable EntityProviderFunc();
 }
