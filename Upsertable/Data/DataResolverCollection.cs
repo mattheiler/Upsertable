@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Upsertable.Data
 {
-    public class DataResolverRegistry
+    public class DataResolverCollection
     {
         private readonly IDictionary<Type, ServiceDescriptor> _resolvers = new Dictionary<Type, ServiceDescriptor>();
 
@@ -14,7 +14,7 @@ namespace Upsertable.Data
             _resolvers.Add(typeof(T), new ServiceDescriptor(typeof(DataResolver<>).MakeGenericType(typeof(T)), factory, lifetime));
         }
 
-        public DataResolverProvider GetProvider()
+        public DataResolverProvider BuildDataResolverProvider()
         {
             var services = new ServiceCollection();
 

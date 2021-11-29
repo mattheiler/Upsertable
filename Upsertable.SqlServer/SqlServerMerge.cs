@@ -17,33 +17,8 @@ namespace Upsertable.SqlServer
 {
     public class SqlServerMerge : Merge
     {
-        public SqlServerMerge
-        (
-            DbContext db,
-            IEntityType target,
-            MergeBehavior behavior,
-            IReadOnlyCollection<IProperty> on,
-            IReadOnlyCollection<IPropertyBase> insert,
-            IReadOnlyCollection<IPropertyBase> update,
-            IMergeSource source,
-            IMergeOutput output,
-            EntityProviderFunc entityProvider,
-            IEnumerable<INavigation> principals,
-            IEnumerable<INavigation> dependents
-        ) : base
-        (
-            db,
-            target,
-            source,
-            on,
-            behavior,
-            insert,
-            update,
-            output,
-            entityProvider,
-            principals,
-            dependents
-        )
+        public SqlServerMerge(DbContext db, IEntityType target, MergeBehavior behavior, IReadOnlyCollection<IProperty> on, IReadOnlyCollection<IPropertyBase> insert, IReadOnlyCollection<IPropertyBase> update, IMergeSource source, IMergeOutput output, EntityProviderFunc entityProvider, IEnumerable<INavigation> principals, IEnumerable<INavigation> dependents)
+            : base(db, target, source, on, behavior, insert, update, output, entityProvider, principals, dependents)
         {
         }
 

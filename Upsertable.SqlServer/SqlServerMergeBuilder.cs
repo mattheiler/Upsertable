@@ -54,13 +54,12 @@ namespace Upsertable.SqlServer
                 select navigation;
             var properties = _entityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
-            var target = _entityType;
             var source = new SqlServerMergeSource(_dbContext, properties, builder, loader);
             var on = _on ?? keys;
             var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
             var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
             var output = new SqlServerMergeOutput(_dbContext, on.Union(_entityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
-            var merge = new SqlServerMerge(_dbContext, target, _behavior, on, insert, update, source, output, _entityProviderFunc, _principals, _dependents);
+            var merge = new SqlServerMerge(_dbContext, _entityType, _behavior, on, insert, update, source, output, _entityProviderFunc, _principals, _dependents);
 
             var composite = new MergeComposite(_before.Append(merge).Concat(_after));
             return composite;
