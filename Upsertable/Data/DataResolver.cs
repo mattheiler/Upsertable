@@ -4,15 +4,27 @@ using Upsertable.Abstractions;
 
 namespace Upsertable.Data
 {
-    public abstract class DataResolver<T> : IDataResolver
+    public class DataResolver<T> : IDataResolver
     {
-        public abstract object ResolveData(IProperty property, object value);
+        private readonly Func<IProperty, T, object> _resolveData;
+        private readonly Func<IProperty, Type> _resolveDataType;
 
-        public abstract Type ResolveDataType(IProperty property);
-
-        public virtual object ResolveData(IProperty property, T value)
+        public DataResolver(Func<IProperty, Type> resolveDataType, Func<IProperty, T, object> resolveData)
         {
-            return ResolveData(property, (object)value);
+            _resolveDataType = resolveDataType;
+            _resolveData = resolveData;
+        }
+
+        public Type Type => typeof(T);
+
+        public object ResolveData(IProperty property, object value)
+        {
+            return _resolveData(property, (T)value);
+        }
+
+        public Type ResolveDataType(IProperty property)
+        {
+            return _resolveDataType(property);
         }
     }
 }

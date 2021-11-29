@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
@@ -10,11 +11,11 @@ namespace Upsertable.Data
 {
     public class DataTableFactory : IDataTableFactory
     {
-        private readonly DataResolverProvider _resolvers;
+        private readonly IDictionary<Type, IDataResolver> _resolvers;
 
-        public DataTableFactory(DataResolverProvider resolvers)
+        public DataTableFactory(IEnumerable<IDataResolver> resolvers)
         {
-            _resolvers = resolvers;
+            _resolvers = resolvers.ToDictionary(resolver => resolver.Type);
         }
 
         public DataTable CreateDataTable(IMergeSource source, IEnumerable entities)
@@ -73,8 +74,7 @@ namespace Upsertable.Data
 
         private Type GetDataType(IProperty property)
         {
-            var resolver = _resolvers.GetResolver(property.ClrType);
-            if (resolver != null)
+            if (_resolvers.TryGetValue(property.ClrType, out var resolver))
                 return resolver.ResolveDataType(property);
 
             return
@@ -87,8 +87,7 @@ namespace Upsertable.Data
         {
             var value = property.GetGetter().GetClrValue(entity);
 
-            var resolver = _resolvers.GetResolver(property.ClrType);
-            if (resolver != null)
+            if (_resolvers.TryGetValue(property.ClrType, out var resolver))
                 return resolver.ResolveData(property, value);
 
             var converter = property.GetValueConverter();

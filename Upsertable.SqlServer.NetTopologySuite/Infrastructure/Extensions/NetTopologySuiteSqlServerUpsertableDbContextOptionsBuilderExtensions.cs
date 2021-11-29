@@ -1,22 +1,14 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+﻿using NetTopologySuite.Geometries;
 using Upsertable.SqlServer.Infrastructure;
+using Upsertable.SqlServer.NetTopologySuite.Data;
 
 namespace Upsertable.SqlServer.NetTopologySuite.Infrastructure.Extensions
 {
     public static class NetTopologySuiteSqlServerUpsertableDbContextOptionsBuilderExtensions
     {
-        public static MergeSqlServerDbContextOptionsBuilder UseNetTopologySuite(this MergeSqlServerDbContextOptionsBuilder @this, Action<NetTopologySuiteSqlServerUpsertableDbContextOptionsBuilder> configure = default)
+        public static SqlServerUpsertableDbContextOptionsBuilder UseNetTopologySuite(this SqlServerUpsertableDbContextOptionsBuilder @this)
         {
-            var upsertable = ((IMergeSqlServerDbContextOptionsInfrastructure)@this).OptionsBuilder;
-            var relational = ((IRelationalDbContextOptionsBuilderInfrastructure)upsertable).OptionsBuilder;
-            var extension = relational.Options.FindExtension<MergeSqlServerDbContextOptionsExtension>() ?? new MergeSqlServerDbContextOptionsExtension();
-
-            ((IDbContextOptionsBuilderInfrastructure)relational).AddOrUpdateExtension(extension);
-
-            configure?.Invoke(new NetTopologySuiteSqlServerUpsertableDbContextOptionsBuilder(@this));
-
-            return @this;
+            return @this.DataResolver(_ => new SqlServerGeometryDataResolver<Geometry>());
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Upsertable.SqlServer.Infrastructure
 {
-    public interface IMergeSqlServerDbContextOptionsInfrastructure
+    public interface ISqlServerUpsertableDbContextOptionsInfrastructure
     {
         SqlServerDbContextOptionsBuilder OptionsBuilder { get; }
     }

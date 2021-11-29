@@ -18,7 +18,7 @@ namespace Upsertable.Tests
         {
             var services = new ServiceCollection();
 
-            services.AddDbContext<FooDbContext>(db => db.UseSqlServer("Server=.;Database=Foo;Trusted_Connection=True", sql => sql.UseMerge(merge => merge.UseSqlBulkCopy())));
+            services.AddDbContext<FooDbContext>(db => db.UseSqlServer("Server=.;Database=Foo;Trusted_Connection=True", sql => sql.UseUpsertable(merge => merge.UseSqlBulkCopy())));
 
             var provider = services.BuildServiceProvider();
             var context = provider.GetService<FooDbContext>();

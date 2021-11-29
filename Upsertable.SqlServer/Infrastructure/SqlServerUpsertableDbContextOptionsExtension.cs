@@ -10,16 +10,17 @@ using Upsertable.Data;
 
 namespace Upsertable.SqlServer.Infrastructure
 {
-    public class MergeSqlServerDbContextOptionsExtension : IDbContextOptionsExtension
+    public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExtension
     {
         private ExtensionInfo _info;
         private ServiceDescriptor _loader;
+        private ServiceCollection _resolvers = new();
 
-        public MergeSqlServerDbContextOptionsExtension()
+        public SqlServerUpsertableDbContextOptionsExtension()
         {
         }
 
-        private MergeSqlServerDbContextOptionsExtension(MergeSqlServerDbContextOptionsExtension cloneable)
+        private SqlServerUpsertableDbContextOptionsExtension(SqlServerUpsertableDbContextOptionsExtension cloneable)
         {
             _loader = cloneable._loader;
         }
@@ -29,6 +30,7 @@ namespace Upsertable.SqlServer.Infrastructure
         public void ApplyServices(IServiceCollection services)
         {
             services.TryAdd(_loader);
+            services.TryAdd(_resolvers);
             services.TryAddTransient<IDataTableFactory, DataTableFactory>();
         }
 
@@ -39,16 +41,32 @@ namespace Upsertable.SqlServer.Infrastructure
 
         DbContextOptionsExtensionInfo IDbContextOptionsExtension.Info => Info;
 
-        public MergeSqlServerDbContextOptionsExtension WithSourceLoader(Func<IServiceProvider, IDataTableLoader> factory, ServiceLifetime lifetime = default)
+        public SqlServerUpsertableDbContextOptionsExtension WithSourceLoader(Func<IServiceProvider, IDataTableLoader> factory)
         {
             var clone = Clone();
-            clone._loader = new ServiceDescriptor(typeof(IDataTableLoader), factory, lifetime);
+            clone._loader = new ServiceDescriptor(typeof(IDataTableLoader), factory, ServiceLifetime.Singleton);
             return clone;
         }
 
-        private MergeSqlServerDbContextOptionsExtension Clone()
+        public SqlServerUpsertableDbContextOptionsExtension WithDataResolver(Func<IServiceProvider, IDataResolver> factory)
         {
-            return new MergeSqlServerDbContextOptionsExtension(this);
+            var clone = Clone();
+            clone._resolvers.Add(new ServiceDescriptor(typeof(IDataResolver), factory, ServiceLifetime.Singleton));
+            return clone;
+        }
+
+        private SqlServerUpsertableDbContextOptionsExtension Clone()
+        {
+            var resolvers = new ServiceCollection();
+
+            foreach (var resolver in _resolvers) resolvers.Add(resolver);
+
+            var extension = new SqlServerUpsertableDbContextOptionsExtension(this)
+            {
+                _loader = _loader,
+                _resolvers = resolvers
+            };
+            return extension;
         }
 
         public class ExtensionInfo : DbContextOptionsExtensionInfo
@@ -59,7 +77,7 @@ namespace Upsertable.SqlServer.Infrastructure
             {
             }
 
-            private new MergeSqlServerDbContextOptionsExtension Extension => (MergeSqlServerDbContextOptionsExtension)base.Extension;
+            private new SqlServerUpsertableDbContextOptionsExtension Extension => (SqlServerUpsertableDbContextOptionsExtension)base.Extension;
 
             public override bool IsDatabaseProvider => false;
 
@@ -72,7 +90,7 @@ namespace Upsertable.SqlServer.Infrastructure
 
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
             {
-                debugInfo["Merge:" + nameof(MergeSqlServerDbContextOptionsBuilder.SourceLoader)] = (Extension._loader?.GetHashCode() ?? 0L).ToString(CultureInfo.InvariantCulture);
+                debugInfo["Merge:" + nameof(SqlServerUpsertableDbContextOptionsBuilder.SourceLoader)] = (Extension._loader?.GetHashCode() ?? 0L).ToString(CultureInfo.InvariantCulture);
             }
 
             private string GetLogFragment()

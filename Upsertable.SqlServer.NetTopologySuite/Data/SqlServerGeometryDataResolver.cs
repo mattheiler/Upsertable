@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.SqlServer.Storage.ValueConversion.Internal;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
-using Upsertable.Data;
+using Upsertable.Abstractions;
 
 namespace Upsertable.SqlServer.NetTopologySuite.Data
 {
-    public class SqlServerGeometryDataResolver<TGeometry> : DataResolver<TGeometry>
+    public class SqlServerGeometryDataResolver<TGeometry> : IDataResolver
         where TGeometry : Geometry
     {
         private readonly ValueConverter _converter;
@@ -21,12 +21,14 @@ namespace Upsertable.SqlServer.NetTopologySuite.Data
 #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
-        public override object ResolveData(IProperty property, object value)
+        public Type Type => typeof(TGeometry);
+
+        public object ResolveData(IProperty property, object value)
         {
             return value != null ? _converter.ConvertToProvider(value) : SqlBytes.Null;
         }
 
-        public override Type ResolveDataType(IProperty property)
+        public Type ResolveDataType(IProperty property)
         {
             return typeof(SqlBytes);
         }
