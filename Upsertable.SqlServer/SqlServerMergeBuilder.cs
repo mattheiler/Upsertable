@@ -59,7 +59,12 @@ namespace Upsertable.SqlServer
             var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
             var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
             var output = new SqlServerMergeOutput(_dbContext, on.Union(_entityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
-            var merge = new SqlServerMerge(_dbContext, _entityType, _behavior, on, insert, update, source, output, _entityProviderFunc, _principals, _dependents);
+            var merge = new SqlServerMerge(_dbContext, _entityType, source, output, _entityProviderFunc) { Behavior = _behavior };
+
+            merge.On.AddRange(on);
+
+            if (insert != null) merge.Insert.AddRange(insert);
+            if (update != null) merge.Update.AddRange(update);
 
             return
                 _before.Any() || _after.Any()

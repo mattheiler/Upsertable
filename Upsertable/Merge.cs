@@ -14,45 +14,32 @@ namespace Upsertable
 {
     public abstract class Merge : IMerge
     {
-        protected readonly MergeBehavior Behavior;
         protected readonly DbContext Db;
-        protected readonly IReadOnlyCollection<INavigation> Dependents;
         protected readonly EntityProviderFunc EntityProvider;
-        protected readonly IReadOnlyCollection<IPropertyBase> Insert;
-        protected readonly IReadOnlyCollection<IProperty> On;
         protected readonly IMergeOutput Output;
-        protected readonly IReadOnlyCollection<INavigation> Principals;
         protected readonly IMergeSource Source;
         protected readonly IEntityType Target;
-        protected readonly IReadOnlyCollection<IPropertyBase> Update;
 
-        protected Merge
-        (
-            DbContext db,
-            IEntityType target,
-            IMergeSource source,
-            IReadOnlyCollection<IProperty> on,
-            MergeBehavior behavior,
-            IReadOnlyCollection<IPropertyBase> insert,
-            IReadOnlyCollection<IPropertyBase> update,
-            IMergeOutput output,
-            EntityProviderFunc entityProvider,
-            IEnumerable<INavigation> principals,
-            IEnumerable<INavigation> dependents
-        )
+        protected Merge(DbContext db, IEntityType target, IMergeSource source, IMergeOutput output, EntityProviderFunc entityProvider)
         {
             Db = db;
             Target = target;
             Source = source;
-            On = on;
-            Behavior = behavior;
-            Insert = insert;
-            Update = update;
             Output = output;
             EntityProvider = entityProvider;
-            Principals = principals.ToList().AsReadOnly();
-            Dependents = dependents.ToList().AsReadOnly();
         }
+
+        public MergeBehavior Behavior { get; set; }
+
+        public List<IProperty> On { get; set; } = new();
+
+        public List<IPropertyBase> Insert { get; } = new();
+
+        public List<IPropertyBase> Update { get; } = new();
+
+        public List<INavigation> Dependents { get; } = new();
+
+        public List<INavigation> Principals { get; } = new();
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {

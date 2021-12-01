@@ -99,7 +99,7 @@ namespace Upsertable.SqlServer
                     break;
                 }
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException($"Unexpected expression: '{member.Expression}'.");
             }
         }
     }

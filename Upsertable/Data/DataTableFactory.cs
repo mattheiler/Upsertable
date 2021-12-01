@@ -91,8 +91,8 @@ namespace Upsertable.Data
                 return resolver.ResolveData(property, value);
 
             var converter = property.GetValueConverter();
-            var data = (converter != null ? converter.ConvertToProvider(value) : value) ?? DBNull.Value;
-            return data;
+            var data = converter != null ? converter.ConvertToProvider(value) : value;
+            return data ?? DBNull.Value;
         }
     }
 }

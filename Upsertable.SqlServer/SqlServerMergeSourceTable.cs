@@ -9,8 +9,8 @@ namespace Upsertable.SqlServer
     public class SqlServerMergeSourceTable : IMergeSourceTable
     {
         private readonly IMergeSource _source;
-        private readonly IDataTableFactory _tableResolver;
         private readonly IDataTableLoader _tableLoader;
+        private readonly IDataTableFactory _tableResolver;
 
         public SqlServerMergeSourceTable(IMergeSource source, IDataTableFactory tableResolver, IDataTableLoader tableLoader)
         {

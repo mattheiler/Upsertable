@@ -14,8 +14,8 @@ namespace Upsertable.SqlServer
         private readonly DbContext _db;
         private readonly IList<IPropertyBase> _properties;
         private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
-        private readonly IDataTableFactory _tableResolver;
         private readonly IDataTableLoader _tableLoader;
+        private readonly IDataTableFactory _tableResolver;
 
         public SqlServerMergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IDataTableFactory tableResolver, IDataTableLoader tableLoader)
         {
