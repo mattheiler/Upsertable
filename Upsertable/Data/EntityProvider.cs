@@ -33,7 +33,7 @@ namespace Upsertable.Data
                     entities.Add(instance);
                 }
 
-                return entities;
+                return entities.Distinct();
             };
         }
 
@@ -55,13 +55,13 @@ namespace Upsertable.Data
                         entities.Add(value);
                 }
 
-                return entities;
+                return entities.Distinct();
             };
         }
 
         public static EntityProviderFunc List<T>(IEnumerable<T> entities)
         {
-            return entities.ToList;
+            return entities.Distinct;
         }
     }
 }

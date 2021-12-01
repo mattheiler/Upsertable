@@ -61,8 +61,10 @@ namespace Upsertable.SqlServer
             var output = new SqlServerMergeOutput(_dbContext, on.Union(_entityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
             var merge = new SqlServerMerge(_dbContext, _entityType, _behavior, on, insert, update, source, output, _entityProviderFunc, _principals, _dependents);
 
-            var composite = new MergeComposite(_before.Append(merge).Concat(_after));
-            return composite;
+            return
+                _before.Any() || _after.Any()
+                    ? new MergeComposite(_before.Append(merge).Concat(_after))
+                    : merge;
         }
 
         public SqlServerMergeBuilder MergeBefore(IMerge merge)
