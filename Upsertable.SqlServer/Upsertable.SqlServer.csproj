@@ -2,6 +2,11 @@
 
 	<PropertyGroup>
 		<TargetFramework>net5.0</TargetFramework>
+		<PackageId>Upsertable.SqlServer</PackageId>
+		<PackageVersion>1.0.0</PackageVersion>
+		<Authors>Matt Heiler</Authors>
+		<RepositoryUrl>https://github.com/mattheiler/Upsertable</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
 	</PropertyGroup>
 
 	<ItemGroup>
