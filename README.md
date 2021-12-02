@@ -13,15 +13,18 @@ await _context
       .Insert()
       .Merge(fub => fub.Baz, bazs =>
       {
-        bazs.On(baz => baz.Code)
+        bazs
+          .On(baz => baz.Code)
           .Insert()
           .Merge(baz => baz.Qux, quxs =>
           {
-            quxs.On(fum => fum.Code)
+            quxs
+              .On(fum => fum.Code)
               .Insert()
               .MergeMany(qux => qux.Fums, fums =>
               {
-                fums.On(fum => fum.Code)
+                fums
+                  .On(fum => fum.Code)
                   .Insert();
               });
           });
@@ -29,12 +32,14 @@ await _context
   })
   .MergeMany(foo => foo.Acks, acks =>
   {
-    acks.On(bar => bar.Code)
+    acks
+      .On(bar => bar.Code)
       .Insert()
       .Update(ack => ack.Name)
       .Merge(ack => ack.Bar, bars =>
       {
-        bars.On(bar => bar.Code)
+        bars
+          .On(bar => bar.Code)
           .Insert();
       });
   })
