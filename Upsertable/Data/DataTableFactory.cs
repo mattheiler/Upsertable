@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Upsertable.Abstractions;
+using Upsertable.Extensions;
 
 namespace Upsertable.Data
 {
@@ -45,12 +46,12 @@ namespace Upsertable.Data
                     switch (member)
                     {
                         case IProperty property:
-                            row[property.GetColumnBaseName()] = GetData(property, entity);
+                            row[property.GetColumnNameInTable()] = GetData(property, entity);
                             break;
                         case INavigation navigation:
                             var value = navigation.GetGetter().GetClrValue(entity);
                             foreach (var property in navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey()))
-                                row[property.GetColumnBaseName()] = GetData(property, value);
+                                row[property.GetColumnNameInTable()] = GetData(property, value);
                             break;
                         default:
                             throw new NotSupportedException("Property or navigation type not supported.");
@@ -67,7 +68,7 @@ namespace Upsertable.Data
             return new DataColumn
             {
                 AllowDBNull = property.IsColumnNullable(),
-                ColumnName = property.GetColumnBaseName(),
+                ColumnName = property.GetColumnNameInTable(),
                 DataType = GetDataType(property)
             };
         }

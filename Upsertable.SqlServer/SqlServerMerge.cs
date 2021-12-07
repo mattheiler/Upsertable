@@ -43,7 +43,7 @@ namespace Upsertable.SqlServer
         protected override async Task PostProcessAsync(IEnumerable<object> entities, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             var properties = On.Union(Target.GetKeys().SelectMany(key => key.Properties).Distinct()).ToList();
-            var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnBaseName()}]"))} FROM [{Output.GetTableName()}]";
+            var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnNameInTable()}]"))} FROM [{Output.GetTableName()}]";
 
             await using var command = new SqlCommand(statement, (SqlConnection)connection, (SqlTransaction)transaction);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -107,7 +107,7 @@ namespace Upsertable.SqlServer
                 .AppendLine($"MERGE [{Target.GetTableName()}] AS [T]")
                 .AppendLine($"USING [{Source.GetTableName()}] AS [S]");
 
-            var on = On.Select(property => property.GetColumnBaseName()).Select(column => $"[T].[{column}] = [S].[{column}]");
+            var on = On.Select(property => property.GetColumnNameInTable()).Select(column => $"[T].[{column}] = [S].[{column}]");
 
             command.AppendLine($"ON {string.Join(" AND ", on)}");
 
@@ -133,7 +133,7 @@ namespace Upsertable.SqlServer
                 Output
                     .GetProperties()
                     .Union(Target.GetKeys().SelectMany(key => key.Properties).Distinct())
-                    .Select(property => property.GetColumnBaseName())
+                    .Select(property => property.GetColumnNameInTable())
                     .Select(column => $"INSERTED.[{column}] AS [{column}]");
 
             command
@@ -164,7 +164,7 @@ namespace Upsertable.SqlServer
                 from property in properties
                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnAdd)
                 where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
-                select property.GetColumnBaseName();
+                select property.GetColumnNameInTable();
         }
 
         private IEnumerable<string> GetColumnsForInsert()
@@ -188,7 +188,7 @@ namespace Upsertable.SqlServer
                 from property in properties
                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnUpdate)
                 where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
-                select property.GetColumnBaseName();
+                select property.GetColumnNameInTable();
         }
 
         public override string ToString()

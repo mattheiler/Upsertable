@@ -8,6 +8,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Upsertable.Abstractions;
+using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer.SqlDataAdapter
 {
@@ -56,9 +57,9 @@ namespace Upsertable.SqlServer.SqlDataAdapter
 
         private static DbParameter GetParameter(DbCommand command, IProperty property)
         {
-            var parameter = property.GetRelationalTypeMapping().CreateParameter(command, $"@{property.GetColumnBaseName()}", null);
+            var parameter = property.GetRelationalTypeMapping().CreateParameter(command, $"@{property.GetColumnNameInTable()}", null);
 
-            parameter.SourceColumn = property.GetColumnBaseName();
+            parameter.SourceColumn = property.GetColumnNameInTable();
             parameter.Value = null;
 
             return parameter;

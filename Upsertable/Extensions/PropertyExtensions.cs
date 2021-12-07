@@ -7,6 +7,11 @@ namespace Upsertable.Extensions
 {
     public static class PropertyExtensions
     {
+        public static string GetColumnNameInTable(this IProperty property)
+        {
+            return property.GetColumnName(StoreObjectIdentifier.Table(property.DeclaringEntityType.GetTableName(), property.DeclaringEntityType.GetSchema()));
+        }
+
         public static object GetValue(this IPropertyBase property, object obj)
         {
             return property.GetGetter().GetClrValue(obj);

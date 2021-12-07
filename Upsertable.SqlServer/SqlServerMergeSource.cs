@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Upsertable.Abstractions;
+using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer
 {
@@ -33,10 +34,10 @@ namespace Upsertable.SqlServer
                 switch (column)
                 {
                     case IProperty property:
-                        columns.Add($"[{property.GetColumnBaseName()}] {property.GetColumnType()}");
+                        columns.Add($"[{property.GetColumnNameInTable()}] {property.GetColumnType()}");
                         break;
                     case INavigation navigation:
-                        columns.AddRange(navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey()).Select(property => $"[{property.GetColumnBaseName()}] {property.GetColumnType()}"));
+                        columns.AddRange(navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey()).Select(property => $"[{property.GetColumnNameInTable()}] {property.GetColumnType()}"));
                         break;
                     default:
                         throw new NotSupportedException("Property or navigation type not supported.");
