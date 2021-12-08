@@ -66,6 +66,9 @@ namespace Upsertable.SqlServer
             if (insert != null) merge.Insert.AddRange(insert);
             if (update != null) merge.Update.AddRange(update);
 
+            merge.Principals.AddRange(_principals);
+            merge.Dependents.AddRange(_dependents);
+
             return
                 _before.Any() || _after.Any()
                     ? new MergeComposite(_before.Append(merge).Concat(_after))
