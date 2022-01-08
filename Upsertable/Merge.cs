@@ -41,6 +41,8 @@ namespace Upsertable
 
         public List<INavigation> Principals { get; } = new();
 
+        public bool IsReadOnly { get; set; }
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var connection = Db.Database.GetDbConnection();
@@ -57,7 +59,7 @@ namespace Upsertable
 
             await source.LoadAsync(entities, connection, transaction, cancellationToken);
 
-            await ProcessAsync(cancellationToken);
+            if (!IsReadOnly) await ProcessAsync(cancellationToken);
 
             await PostProcessAsync(entities, connection, transaction, cancellationToken);
         }

@@ -29,6 +29,7 @@ namespace Upsertable.SqlServer
 
         private IReadOnlyCollection<IProperty> _on;
         private IReadOnlyCollection<IPropertyBase> _update;
+        private bool _readonly;
 
         public SqlServerMergeBuilder(DbContext dbContext, IEntityType entityType, EntityProviderFunc entityProviderFunc)
         {
@@ -59,7 +60,7 @@ namespace Upsertable.SqlServer
             var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
             var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
             var output = new SqlServerMergeOutput(_dbContext, on.Union(_entityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
-            var merge = new SqlServerMerge(_dbContext, _entityType, source, output, _entityProviderFunc) { Behavior = _behavior };
+            var merge = new SqlServerMerge(_dbContext, _entityType, source, output, _entityProviderFunc) { Behavior = _behavior, IsReadOnly = _readonly };
 
             merge.On.AddRange(on);
 
@@ -73,6 +74,12 @@ namespace Upsertable.SqlServer
                 _before.Any() || _after.Any()
                     ? new MergeComposite(_before.Append(merge).Concat(_after))
                     : merge;
+        }
+
+        public SqlServerMergeBuilder AsReadOnly(bool @readonly = true)
+        {
+            _readonly = @readonly;
+            return this;
         }
 
         public SqlServerMergeBuilder MergeBefore(IMerge merge)
