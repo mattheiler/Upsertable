@@ -15,6 +15,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Upsertable.SqlServer\Upsertable.SqlServer.csproj" />
+		<ProjectReference Include="..\Upsertable\Upsertable.csproj" />
 	</ItemGroup>
 
 </Project>
