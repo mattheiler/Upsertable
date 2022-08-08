@@ -63,6 +63,8 @@ namespace Upsertable.SqlServer
                 {
                     var property = properties[index];
                     var value = values[index];
+                    if (value is DBNull)
+                        value = null;
 
                     var type = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                     if (type.IsEnum)
