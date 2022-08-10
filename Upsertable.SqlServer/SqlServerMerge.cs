@@ -68,7 +68,7 @@ namespace Upsertable.SqlServer
 
                     var type = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
                     if (type.IsEnum)
-                        value = Enum.ToObject(type, value);
+                        value = value != null ? Enum.ToObject(type, value) : null;
 
                     var converter = property.GetValueConverter();
                     if (converter != null)
@@ -109,7 +109,7 @@ namespace Upsertable.SqlServer
                 .AppendLine($"MERGE [{Target.GetTableName()}] AS [T]")
                 .AppendLine($"USING [{Source.GetTableName()}] AS [S]");
 
-            var on = On.Select(property => property.GetColumnNameInTable()).Select(column => $"[T].[{column}] = [S].[{column}]");
+            var on = On.Select(property => property.GetColumnNameInTable()).Select(column => $"ISNULL([T].[{column}], 0) = ISNULL([S].[{column}], 0)");
 
             command.AppendLine($"ON {string.Join(" AND ", on)}");
 
