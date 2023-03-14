@@ -1,9 +1,16 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Upsertable.Extensions;
 
@@ -18,14 +25,14 @@ namespace Upsertable.Data
                 var entities = new List<object>();
 
 #pragma warning disable EF1001 // Internal EF Core API usage.
-                var instanceFactory = skipNavigation.JoinEntityType.GetInstanceFactory();
-#pragma warning restore EF1001 // Internal EF Core API usage.
                 var materializationContext = new MaterializationContext(new ValueBuffer(), dbContext);
+                var materializer = dbContext.GetDependencies().StateManager.EntityMaterializerSource.GetMaterializer(skipNavigation.JoinEntityType);
+#pragma warning restore EF1001 // Internal EF Core API usage.
 
                 foreach (var source in declaringEntityProviderFunc())
-                foreach (var target in (IEnumerable)skipNavigation.GetCollectionAccessor().GetOrCreate(source, false))
+                foreach (var target in (IEnumerable) skipNavigation.GetCollectionAccessor()?.GetOrCreate(source, false) ?? Enumerable.Empty<object>())
                 {
-                    var instance = instanceFactory(materializationContext);
+                    var instance = materializer(materializationContext);
 
                     skipNavigation.ForeignKey.Properties.SetValues(instance, skipNavigation.ForeignKey.PrincipalKey.Properties.GetValues(source));
                     skipNavigation.Inverse.ForeignKey.Properties.SetValues(instance, skipNavigation.Inverse.ForeignKey.PrincipalKey.Properties.GetValues(target));

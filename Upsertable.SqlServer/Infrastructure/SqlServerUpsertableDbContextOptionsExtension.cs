@@ -83,9 +83,14 @@ namespace Upsertable.SqlServer.Infrastructure
 
             public override string LogFragment => _logFragment ??= GetLogFragment();
 
-            public override long GetServiceProviderHashCode()
+            public override int GetServiceProviderHashCode()
             {
                 return 0;
+            }
+
+            public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
+            {
+                return true;
             }
 
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)

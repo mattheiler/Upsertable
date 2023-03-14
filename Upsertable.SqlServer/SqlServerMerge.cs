@@ -109,7 +109,7 @@ namespace Upsertable.SqlServer
                 .AppendLine($"MERGE [{Target.GetTableName()}] AS [T]")
                 .AppendLine($"USING [{Source.GetTableName()}] AS [S]");
 
-            var on = On.Select(property => property.GetColumnNameInTable()).Select(column => $"ISNULL([T].[{column}], 0) = ISNULL([S].[{column}], 0)");
+            var on = On.Select(property => property.GetColumnNameInTable()).Select(column => $"[T].[{column}] = [S].[{column}]");
 
             command.AppendLine($"ON {string.Join(" AND ", on)}");
 
