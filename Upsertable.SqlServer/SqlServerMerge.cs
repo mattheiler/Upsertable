@@ -166,6 +166,7 @@ namespace Upsertable.SqlServer
                 from property in properties
                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnAdd)
                 where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
+                where !property.IsShadowProperty()
                 select property.GetColumnNameInTable();
         }
 
@@ -190,6 +191,7 @@ namespace Upsertable.SqlServer
                 from property in properties
                 where !property.ValueGenerated.HasFlag(ValueGenerated.OnUpdate)
                 where property.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.IdentityColumn
+                where !property.IsShadowProperty()
                 select property.GetColumnNameInTable();
         }
 
