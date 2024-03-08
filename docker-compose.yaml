@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "61805:1433"
+    environment:
+      SA_PASSWORD: "YourStrong@Passw0rd"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - ./backup:/docker-entrypoint-initdb.d

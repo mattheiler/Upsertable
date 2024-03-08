@@ -1,15 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31410.357
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Upsertable", "Upsertable\Upsertable.csproj", "{F0BCDC80-87A6-40AA-A62F-4D604C45B9AA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Upsertable.Tests", "Upsertable.Tests\Upsertable.Tests.csproj", "{D06EEA4A-3A30-468B-AD30-F55604290967}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Upsertable.SqlServer.Tests", "Upsertable.SqlServer.Tests\Upsertable.SqlServer.Tests.csproj", "{D06EEA4A-3A30-468B-AD30-F55604290967}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Upsertable.SqlServer", "Upsertable.SqlServer\Upsertable.SqlServer.csproj", "{E8E01FC7-8D8D-4F91-A230-88CDEB1069F6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Upsertable.SqlServer.NetTopologySuite", "Upsertable.SqlServer.NetTopologySuite\Upsertable.SqlServer.NetTopologySuite.csproj", "{B0616B2D-D88C-496D-B155-DD60277B4221}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{83BDECFB-C759-4CB8-95E5-854FF87E2946}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yaml = docker-compose.yaml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
