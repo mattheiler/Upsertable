@@ -14,10 +14,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Compose
+      - name: Setup database
         run: docker-compose up -d
 
-      - name: Setup
+      - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "8.0.x"
@@ -25,7 +25,10 @@ jobs:
       - name: Restore
         run: dotnet restore
 
-      - name: Update
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Update database
         run: dotnet ef database update --project Upsertable.SqlServer.Tests
 
       - name: Test
