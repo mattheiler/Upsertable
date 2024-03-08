@@ -1,7 +1,6 @@
-﻿namespace Upsertable.SqlServer.SqlDataAdapter
+﻿namespace Upsertable.SqlServer.SqlDataAdapter;
+
+public class SqlDataAdapterDataTableLoaderOptions
 {
-    public class SqlDataAdapterDataTableLoaderOptions
-    {
-        public int CommandTimeout { get; set; } = 30;
-    }
+    public int CommandTimeout { get; set; } = 30;
 }

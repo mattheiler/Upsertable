@@ -1,14 +1,13 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.Abstractions
+namespace Upsertable.Abstractions;
+
+public interface IDataResolver
 {
-    public interface IDataResolver
-    {
-        Type Type { get; }
+    Type Type { get; }
 
-        object ResolveData(IProperty property, object value);
+    object ResolveData(IProperty property, object value);
 
-        Type ResolveDataType(IProperty property);
-    }
+    Type ResolveDataType(IProperty property);
 }

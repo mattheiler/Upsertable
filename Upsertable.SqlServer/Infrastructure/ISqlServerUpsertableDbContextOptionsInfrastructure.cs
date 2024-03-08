@@ -1,9 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Upsertable.SqlServer.Infrastructure
+namespace Upsertable.SqlServer.Infrastructure;
+
+public interface ISqlServerUpsertableDbContextOptionsInfrastructure
 {
-    public interface ISqlServerUpsertableDbContextOptionsInfrastructure
-    {
-        SqlServerDbContextOptionsBuilder OptionsBuilder { get; }
-    }
+    SqlServerDbContextOptionsBuilder OptionsBuilder { get; }
 }

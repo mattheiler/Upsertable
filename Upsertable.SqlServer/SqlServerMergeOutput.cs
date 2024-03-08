@@ -5,47 +5,45 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.Abstractions;
 using Upsertable.Extensions;
 
-namespace Upsertable.SqlServer
+namespace Upsertable.SqlServer;
+
+public class SqlServerMergeOutput
 {
-    public class SqlServerMergeOutput : IMergeOutput
+    private readonly DbContext _db;
+    private readonly IList<IProperty> _properties;
+    private readonly string _table = "#OUTPUT_" + Guid.NewGuid().ToString().Replace('-', '_');
+
+    public SqlServerMergeOutput(DbContext db, IEnumerable<IProperty> properties)
     {
-        private readonly DbContext _db;
-        private readonly IList<IProperty> _properties;
-        private readonly string _table = "#OUTPUT_" + Guid.NewGuid().ToString().Replace('-', '_');
+        _db = db;
+        _properties = properties.ToList();
+    }
 
-        public SqlServerMergeOutput(DbContext db, IEnumerable<IProperty> properties)
-        {
-            _db = db;
-            _properties = properties.ToList();
-        }
+    public async Task<SqlServerMergeOutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
+    {
+        var columns = GetProperties().Select(property => property.GetColumnName(StoreObjectIdentifier.Table(property.DeclaringEntityType.GetTableName(), property.DeclaringEntityType.GetSchema())));
+        var definitions = GetProperties().Select(property => $"{property.GetColumnNameInTable()} {property.GetColumnType()}");
+        var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", definitions)})";
 
-        public async Task<IMergeOutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
-        {
-            var columns = GetProperties().Select(property => property.GetColumnName(StoreObjectIdentifier.Table(property.DeclaringEntityType.GetTableName(), property.DeclaringEntityType.GetSchema())));
-            var definitions = GetProperties().Select(property => $"{property.GetColumnNameInTable()} {property.GetColumnType()}");
-            var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", definitions)})";
+        await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
-            await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
+        return new SqlServerMergeOutputTable(this);
+    }
 
-            return new SqlServerMergeOutputTable(this);
-        }
+    public async Task DropTableAsync()
+    {
+        await _db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
+    }
 
-        public async Task DropTableAsync()
-        {
-            await _db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
-        }
+    public IEnumerable<IProperty> GetProperties()
+    {
+        return _properties;
+    }
 
-        public IEnumerable<IProperty> GetProperties()
-        {
-            return _properties;
-        }
-
-        public string GetTableName()
-        {
-            return _table;
-        }
+    public string GetTableName()
+    {
+        return _table;
     }
 }

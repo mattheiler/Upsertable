@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace Upsertable.SqlServer.SqlDataAdapter.Extensions
+namespace Upsertable.SqlServer.SqlDataAdapter.Extensions;
+
+public static class SqlDataAdapterSqlServerMergeBuilderExtensions
 {
-    public static class SqlDataAdapterSqlServerMergeBuilderExtensions
+    public static SqlServerMergeBuilder<T> UsingSqlDataAdapter<T>(this SqlServerMergeBuilder<T> @this, Action<SqlDataAdapterDataTableLoaderOptions> configure = default) where T : class
     {
-        public static SqlServerMergeBuilder<T> UsingSqlDataAdapter<T>(this SqlServerMergeBuilder<T> @this, Action<SqlDataAdapterDataTableLoaderOptions> configure = default) where T : class
-        {
-            var options = new SqlDataAdapterDataTableLoaderOptions();
-            configure?.Invoke(options);
-            return @this.WithSourceLoader(new SqlDataAdapterDataTableLoader(options));
-        }
+        var options = new SqlDataAdapterDataTableLoaderOptions();
+        configure?.Invoke(options);
+        return @this.WithSourceLoader(new SqlDataAdapterDataTableLoader(options));
     }
 }

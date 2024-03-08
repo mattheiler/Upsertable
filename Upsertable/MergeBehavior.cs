@@ -1,11 +1,10 @@
 ﻿using System;
 
-namespace Upsertable
+namespace Upsertable;
+
+[Flags]
+public enum MergeBehavior
 {
-    [Flags]
-    public enum MergeBehavior
-    {
-        Update = 1,
-        Insert = 2
-    }
+    Update = 1,
+    Insert = 2
 }

@@ -5,28 +5,27 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Upsertable.Abstractions;
 
-namespace Upsertable.SqlServer.SqlBulkCopy
+namespace Upsertable.SqlServer.SqlBulkCopy;
+
+public class SqlBulkCopyDataTableLoader : IDataTableLoader
 {
-    public class SqlBulkCopyDataTableLoader : IDataTableLoader
+    private readonly SqlBulkCopyDataTableLoaderOptions _options;
+
+    public SqlBulkCopyDataTableLoader(SqlBulkCopyDataTableLoaderOptions options)
     {
-        private readonly SqlBulkCopyDataTableLoaderOptions _options;
+        _options = options;
+    }
 
-        public SqlBulkCopyDataTableLoader(SqlBulkCopyDataTableLoaderOptions options)
+    public async Task LoadAsync(SqlServerMergeSource source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        using var copy = new Microsoft.Data.SqlClient.SqlBulkCopy((SqlConnection)connection, default, (SqlTransaction)transaction)
         {
-            _options = options;
-        }
+            BatchSize = _options.BatchSize,
+            DestinationTableName = source.GetTableName(),
+            EnableStreaming = true,
+            BulkCopyTimeout = _options.BulkCopyTimeout
+        };
 
-        public async Task LoadAsync(IMergeSource source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
-        {
-            using var copy = new Microsoft.Data.SqlClient.SqlBulkCopy((SqlConnection)connection, default, (SqlTransaction)transaction)
-            {
-                BatchSize = _options.BatchSize,
-                DestinationTableName = source.GetTableName(),
-                EnableStreaming = true,
-                BulkCopyTimeout = _options.BulkCopyTimeout
-            };
-
-            await copy.WriteToServerAsync(table, cancellationToken);
-        }
+        await copy.WriteToServerAsync(table, cancellationToken);
     }
 }

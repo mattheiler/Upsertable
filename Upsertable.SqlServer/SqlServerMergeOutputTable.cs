@@ -1,20 +1,18 @@
 ﻿using System.Threading.Tasks;
-using Upsertable.Abstractions;
 
-namespace Upsertable.SqlServer
+namespace Upsertable.SqlServer;
+
+public class SqlServerMergeOutputTable
 {
-    public class SqlServerMergeOutputTable : IMergeOutputTable
+    private readonly SqlServerMergeOutput _output;
+
+    public SqlServerMergeOutputTable(SqlServerMergeOutput output)
     {
-        private readonly SqlServerMergeOutput _output;
+        _output = output;
+    }
 
-        public SqlServerMergeOutputTable(SqlServerMergeOutput output)
-        {
-            _output = output;
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await _output.DropTableAsync();
-        }
+    public async ValueTask DisposeAsync()
+    {
+        await _output.DropTableAsync();
     }
 }

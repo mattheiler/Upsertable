@@ -1,10 +1,11 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Upsertable.Abstractions
+namespace Upsertable.Abstractions;
+
+public interface IMerge
 {
-    public interface IMerge
-    {
-        Task ExecuteAsync(CancellationToken cancellationToken = default);
-    }
+    public MergeBehavior Behavior { get; }
+
+    Task ExecuteAsync(CancellationToken cancellationToken = default);
 }

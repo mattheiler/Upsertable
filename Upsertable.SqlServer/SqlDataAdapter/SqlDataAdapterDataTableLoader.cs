@@ -10,59 +10,58 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Upsertable.Abstractions;
 using Upsertable.Extensions;
 
-namespace Upsertable.SqlServer.SqlDataAdapter
+namespace Upsertable.SqlServer.SqlDataAdapter;
+
+public class SqlDataAdapterDataTableLoader : IDataTableLoader
 {
-    public class SqlDataAdapterDataTableLoader : IDataTableLoader
+    private readonly SqlDataAdapterDataTableLoaderOptions _options;
+
+    public SqlDataAdapterDataTableLoader(SqlDataAdapterDataTableLoaderOptions options)
     {
-        private readonly SqlDataAdapterDataTableLoaderOptions _options;
+        _options = options;
+    }
 
-        public SqlDataAdapterDataTableLoader(SqlDataAdapterDataTableLoaderOptions options)
+    public Task LoadAsync(SqlServerMergeSource source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        var command = new SqlCommand
         {
-            _options = options;
-        }
+            Connection = (SqlConnection)connection,
+            Transaction = (SqlTransaction)transaction,
+            CommandTimeout = _options.CommandTimeout
+        };
 
-        public Task LoadAsync(IMergeSource source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
-        {
-            var command = new SqlCommand
+        foreach (var column in source.GetProperties())
+            switch (column)
             {
-                Connection = (SqlConnection)connection,
-                Transaction = (SqlTransaction)transaction,
-                CommandTimeout = _options.CommandTimeout
-            };
+                case IProperty property:
+                    command.Parameters.Add(GetParameter(command, property));
+                    break;
+                case INavigation navigation:
+                    command.Parameters.AddRange(navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey()).Select(property => GetParameter(command, property)).ToArray());
+                    break;
+                default:
+                    throw new NotSupportedException("Property or navigation type not supported.");
+            }
 
-            foreach (var column in source.GetProperties())
-                switch (column)
-                {
-                    case IProperty property:
-                        command.Parameters.Add(GetParameter(command, property));
-                        break;
-                    case INavigation navigation:
-                        command.Parameters.AddRange(navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey()).Select(property => GetParameter(command, property)).ToArray());
-                        break;
-                    default:
-                        throw new NotSupportedException("Property or navigation type not supported.");
-                }
+        var columns = command.Parameters.OfType<DbParameter>().Select(parameter => $"[{parameter.SourceColumn}]");
+        var parameters = command.Parameters.OfType<DbParameter>().Select(parameter => parameter.ParameterName);
 
-            var columns = command.Parameters.OfType<DbParameter>().Select(parameter => $"[{parameter.SourceColumn}]");
-            var parameters = command.Parameters.OfType<DbParameter>().Select(parameter => parameter.ParameterName);
+        command.CommandText = $"INSERT INTO [{source.GetTableName()}] ({string.Join(',', columns)}) VALUES ({string.Join(',', parameters)})";
 
-            command.CommandText = $"INSERT INTO [{source.GetTableName()}] ({string.Join(',', columns)}) VALUES ({string.Join(',', parameters)})";
+        var adapter = new Microsoft.Data.SqlClient.SqlDataAdapter { InsertCommand = command };
 
-            var adapter = new Microsoft.Data.SqlClient.SqlDataAdapter { InsertCommand = command };
+        adapter.Update(table);
 
-            adapter.Update(table);
+        return Task.CompletedTask;
+    }
 
-            return Task.CompletedTask;
-        }
+    private static DbParameter GetParameter(DbCommand command, IProperty property)
+    {
+        var parameter = property.GetRelationalTypeMapping().CreateParameter(command, $"@{property.GetColumnNameInTable()}", null);
 
-        private static DbParameter GetParameter(DbCommand command, IProperty property)
-        {
-            var parameter = property.GetRelationalTypeMapping().CreateParameter(command, $"@{property.GetColumnNameInTable()}", null);
+        parameter.SourceColumn = property.GetColumnNameInTable();
+        parameter.Value = null;
 
-            parameter.SourceColumn = property.GetColumnNameInTable();
-            parameter.Value = null;
-
-            return parameter;
-        }
+        return parameter;
     }
 }

@@ -2,37 +2,36 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Upsertable.Abstractions;
 
-namespace Upsertable.SqlServer.Infrastructure
+namespace Upsertable.SqlServer.Infrastructure;
+
+public class SqlServerUpsertableDbContextOptionsBuilder : ISqlServerUpsertableDbContextOptionsInfrastructure
 {
-    public class SqlServerUpsertableDbContextOptionsBuilder : ISqlServerUpsertableDbContextOptionsInfrastructure
+    private readonly SqlServerDbContextOptionsBuilder _optionsBuilder;
+
+    public SqlServerUpsertableDbContextOptionsBuilder(SqlServerDbContextOptionsBuilder optionsBuilder)
     {
-        private readonly SqlServerDbContextOptionsBuilder _optionsBuilder;
+        _optionsBuilder = optionsBuilder;
+    }
 
-        public SqlServerUpsertableDbContextOptionsBuilder(SqlServerDbContextOptionsBuilder optionsBuilder)
-        {
-            _optionsBuilder = optionsBuilder;
-        }
+    SqlServerDbContextOptionsBuilder ISqlServerUpsertableDbContextOptionsInfrastructure.OptionsBuilder => _optionsBuilder;
 
-        SqlServerDbContextOptionsBuilder ISqlServerUpsertableDbContextOptionsInfrastructure.OptionsBuilder => _optionsBuilder;
+    public SqlServerUpsertableDbContextOptionsBuilder SourceLoader(Func<IServiceProvider, IDataTableLoader> factory)
+    {
+        return WithOption(e => e.WithSourceLoader(factory));
+    }
 
-        public SqlServerUpsertableDbContextOptionsBuilder SourceLoader(Func<IServiceProvider, IDataTableLoader> factory)
-        {
-            return WithOption(e => e.WithSourceLoader(factory));
-        }
+    public SqlServerUpsertableDbContextOptionsBuilder DataResolver(Func<IServiceProvider, IDataResolver> factory)
+    {
+        return WithOption(e => e.WithDataResolver(factory));
+    }
 
-        public SqlServerUpsertableDbContextOptionsBuilder DataResolver(Func<IServiceProvider, IDataResolver> factory)
-        {
-            return WithOption(e => e.WithDataResolver(factory));
-        }
+    private SqlServerUpsertableDbContextOptionsBuilder WithOption(Func<SqlServerUpsertableDbContextOptionsExtension, SqlServerUpsertableDbContextOptionsExtension> configure)
+    {
+        var relational = ((IRelationalDbContextOptionsBuilderInfrastructure)_optionsBuilder).OptionsBuilder;
+        var extension = relational.Options.FindExtension<SqlServerUpsertableDbContextOptionsExtension>() ?? new SqlServerUpsertableDbContextOptionsExtension();
 
-        private SqlServerUpsertableDbContextOptionsBuilder WithOption(Func<SqlServerUpsertableDbContextOptionsExtension, SqlServerUpsertableDbContextOptionsExtension> configure)
-        {
-            var relational = ((IRelationalDbContextOptionsBuilderInfrastructure)_optionsBuilder).OptionsBuilder;
-            var extension = relational.Options.FindExtension<SqlServerUpsertableDbContextOptionsExtension>() ?? new SqlServerUpsertableDbContextOptionsExtension();
+        ((IDbContextOptionsBuilderInfrastructure)relational).AddOrUpdateExtension(configure(extension));
 
-            ((IDbContextOptionsBuilderInfrastructure)relational).AddOrUpdateExtension(configure(extension));
-
-            return this;
-        }
+        return this;
     }
 }
