@@ -25,5 +25,8 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Update
+        run: dotnet ef database update --project Upsertable.SqlServer.Tests
+
       - name: Test
         run: dotnet test
