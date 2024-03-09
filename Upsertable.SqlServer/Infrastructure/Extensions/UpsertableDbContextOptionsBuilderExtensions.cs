@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Upsertable.Abstractions;
 
 namespace Upsertable.SqlServer.Infrastructure.Extensions;
 

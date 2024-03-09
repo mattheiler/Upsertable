@@ -5,7 +5,5 @@ namespace Upsertable.Abstractions;
 
 public interface IMerge
 {
-    public MergeBehavior Behavior { get; }
-
     Task ExecuteAsync(CancellationToken cancellationToken = default);
 }

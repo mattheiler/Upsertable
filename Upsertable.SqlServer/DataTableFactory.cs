@@ -7,9 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Upsertable.Abstractions;
 using Upsertable.Extensions;
-using Upsertable.SqlServer;
 
-namespace Upsertable.Data;
+namespace Upsertable.SqlServer;
 
 public class DataTableFactory : IDataTableFactory
 {

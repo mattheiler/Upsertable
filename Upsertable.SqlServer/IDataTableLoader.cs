@@ -2,9 +2,8 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Upsertable.SqlServer;
 
-namespace Upsertable.Abstractions;
+namespace Upsertable.SqlServer;
 
 public interface IDataTableLoader
 {
