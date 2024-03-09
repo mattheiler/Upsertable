@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Upsertable.SqlServer.Internal.Extensions;
 
-public static class PropertyExtensions
+internal static class PropertyExtensions
 {
     public static string GetColumnNameInTable(this IProperty property)
     {
         var type = property.DeclaringType;
-        var name = type.GetTableName() ?? throw new InvalidOperationException("Declaring type must be mapped to a table.");
+        var name = type.GetTableName() ?? throw new InvalidOperationException("Property type must be mapped to a table.");
         var schema = type.GetSchema();
         var table = StoreObjectIdentifier.Table(name, schema);
         var column = property.GetColumnName(table) ?? throw new InvalidOperationException("Property must be mapped to a column.");

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Upsertable.SqlServer.Internal.Extensions;
 
-public static class EntityTypeExtensions
+internal static class EntityTypeExtensions
 {
     public static INavigationBase? FindNavigationBase(this IEntityType @this, string name)
     {
