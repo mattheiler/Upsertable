@@ -27,7 +27,7 @@ public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExt
 
     public void ApplyServices(IServiceCollection services)
     {
-        if (_loader!= null) services.TryAdd(_loader);
+        services.TryAdd(_loader ?? throw new InvalidOperationException("A default source load strategy is required."));
         services.TryAdd(_resolvers);
     }
 
