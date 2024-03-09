@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Upsertable.Abstractions;
-using Upsertable.Data;
 
 namespace Upsertable.SqlServer.Infrastructure;
 
@@ -31,7 +30,6 @@ public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExt
     {
         services.TryAdd(_loader);
         services.TryAdd(_resolvers);
-        services.TryAddTransient<IDataTableFactory, DataTableFactory>();
     }
 
     public void Validate(IDbContextOptions options)

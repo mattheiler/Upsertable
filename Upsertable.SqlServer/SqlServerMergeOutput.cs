@@ -23,9 +23,8 @@ public class SqlServerMergeOutput
 
     public async Task<SqlServerMergeOutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
     {
-        var columns = GetProperties().Select(property => property.GetColumnName(StoreObjectIdentifier.Table(property.DeclaringEntityType.GetTableName(), property.DeclaringEntityType.GetSchema())));
-        var definitions = GetProperties().Select(property => $"{property.GetColumnNameInTable()} {property.GetColumnType()}");
-        var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", definitions)})";
+        var columns = GetProperties().Select(property => $"{property.GetColumnNameInTable()} {property.GetColumnType()}");
+        var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", columns)})";
 
         await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 

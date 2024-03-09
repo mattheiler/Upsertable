@@ -23,9 +23,8 @@ public class SqlServerMergeBuilder
     private readonly List<INavigation> _principals = new();
 
     private MergeBehavior _behavior;
-    private IDataTableLoader _dataTableLoader;
-    private IDataTableFactory _dataTableResolver;
     private IReadOnlyCollection<IPropertyBase> _insert;
+    private IDataTableLoader _loader;
 
     private IReadOnlyCollection<IProperty> _on;
     private bool _readonly;
@@ -43,8 +42,8 @@ public class SqlServerMergeBuilder
 
     public IMerge ToMerge()
     {
-        var builder = _dataTableResolver ?? _dbContext.GetService<IDataTableFactory>();
-        var loader = _dataTableLoader ?? _dbContext.GetService<IDataTableLoader>();
+        var resolvers = _dbContext.GetService<IEnumerable<IDataResolver>>();
+        var loader = _loader ?? _dbContext.GetService<IDataTableLoader>();
 
         var keys = _entityType.FindPrimaryKey().Properties;
         var navigations =
@@ -55,7 +54,7 @@ public class SqlServerMergeBuilder
             select navigation;
         var properties = _entityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
-        var source = new SqlServerMergeSource(_dbContext, properties, builder, loader);
+        var source = new SqlServerMergeSource(_dbContext, properties, loader, resolvers);
         var on = _on ?? keys;
         var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
         var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
@@ -118,18 +117,6 @@ public class SqlServerMergeBuilder
         return this;
     }
 
-    public SqlServerMergeBuilder WithSourceBuilder(IDataTableFactory tableResolver)
-    {
-        _dataTableResolver = tableResolver;
-        return this;
-    }
-
-    public SqlServerMergeBuilder WithSourceLoader(IDataTableLoader tableLoader)
-    {
-        _dataTableLoader = tableLoader;
-        return this;
-    }
-
     public SqlServerMergeBuilder WithPrincipal(INavigation navigation)
     {
         _principals.Add(navigation);
@@ -139,6 +126,12 @@ public class SqlServerMergeBuilder
     public SqlServerMergeBuilder WithDependent(INavigation navigation)
     {
         _dependents.Add(navigation);
+        return this;
+    }
+
+    public SqlServerMergeBuilder WithSourceLoader(IDataTableLoader loader)
+    {
+        _loader = loader;
         return this;
     }
 
@@ -197,11 +190,6 @@ public class SqlServerMergeBuilder<T> : SqlServerMergeBuilder where T : class
     public SqlServerMergeBuilder<T> MergeMany<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> property, Action<SqlServerMergeBuilder<TProperty>> build) where TProperty : class
     {
         return (SqlServerMergeBuilder<T>)Merge(property, build);
-    }
-
-    public new SqlServerMergeBuilder<T> WithSourceBuilder(IDataTableFactory tableResolver)
-    {
-        return (SqlServerMergeBuilder<T>)base.WithSourceBuilder(tableResolver);
     }
 
     public new SqlServerMergeBuilder<T> WithSourceLoader(IDataTableLoader tableLoader)

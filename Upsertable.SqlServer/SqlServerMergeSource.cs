@@ -15,15 +15,15 @@ public class SqlServerMergeSource
     private readonly DbContext _db;
     private readonly IList<IPropertyBase> _properties;
     private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
-    private readonly IDataTableLoader _tableLoader;
-    private readonly IDataTableFactory _tableResolver;
+    private readonly IDataTableLoader _loader;
+    private readonly IEnumerable<IDataResolver> _resolvers;
 
-    public SqlServerMergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IDataTableFactory tableResolver, IDataTableLoader tableLoader)
+    public SqlServerMergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IDataTableLoader loader, IEnumerable<IDataResolver> resolvers)
     {
         _db = db;
         _properties = properties.ToList();
-        _tableResolver = tableResolver;
-        _tableLoader = tableLoader;
+        _loader = loader;
+        _resolvers = resolvers;
     }
 
     public async Task<SqlServerMergeSourceTable> CreateTableAsync(CancellationToken cancellationToken = default)
@@ -47,7 +47,7 @@ public class SqlServerMergeSource
 
         await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
-        return new SqlServerMergeSourceTable(this, _tableResolver, _tableLoader);
+        return new SqlServerMergeSourceTable(this, _loader, _resolvers);
     }
 
     public async Task DropTableAsync()
