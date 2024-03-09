@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Upsertable.SqlServer.Infrastructure;
+namespace Upsertable.Infrastructure;
 
 public class SqlServerUpsertableDbContextOptionsBuilder : ISqlServerUpsertableDbContextOptionsInfrastructure
 {

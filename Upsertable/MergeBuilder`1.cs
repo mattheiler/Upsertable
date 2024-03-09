@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public class MergeBuilder<T>(DbContext db, Func<IEnumerable> provider) : MergeBuilder(db.Model.FindEntityType(typeof(T)) ?? throw new ArgumentException("Entity type not found."), db, provider) where T : class
 {

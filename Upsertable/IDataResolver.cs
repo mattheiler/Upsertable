@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public interface IDataResolver
 {

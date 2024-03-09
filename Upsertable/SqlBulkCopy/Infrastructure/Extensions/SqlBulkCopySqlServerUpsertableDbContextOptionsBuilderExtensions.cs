@@ -1,7 +1,7 @@
 ﻿using System;
-using Upsertable.SqlServer.Infrastructure;
+using Upsertable.Infrastructure;
 
-namespace Upsertable.SqlServer.SqlBulkCopy.Infrastructure.Extensions;
+namespace Upsertable.SqlBulkCopy.Infrastructure.Extensions;
 
 public static class SqlBulkCopySqlServerUpsertableDbContextOptionsBuilderExtensions
 {

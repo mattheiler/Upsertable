@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.SqlServer.Internal.Extensions;
+using Upsertable.Internal.Extensions;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public class Output(DbContext db, IEnumerable<IProperty> properties)
 {

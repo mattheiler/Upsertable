@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Upsertable.SqlServer.Tests;
+namespace Upsertable.Tests;
 
 public class TestDbContextDesignTimeFactory : IDesignTimeDbContextFactory<TestDbContext>
 {

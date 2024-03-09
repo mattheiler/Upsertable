@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Upsertable.SqlServer.SqlBulkCopy.Extensions;
+namespace Upsertable.SqlBulkCopy.Extensions;
 
 public static class SqlBulkCopySqlServerMergeBuilderExtensions
 {

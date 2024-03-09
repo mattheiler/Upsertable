@@ -4,9 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.SqlServer.Internal.Extensions;
+using Upsertable.Internal.Extensions;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public static class MergeBuilderExtensions
 {

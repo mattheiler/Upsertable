@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Upsertable.SqlServer.Infrastructure.Extensions;
+namespace Upsertable.Infrastructure.Extensions;
 
 public static class UpsertableDbContextOptionsBuilderExtensions
 {

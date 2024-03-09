@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Upsertable.SqlServer.SqlDataAdapter.Extensions;
+namespace Upsertable.SqlDataAdapter.Extensions;
 
 public static class SqlDataAdapterSqlServerMergeBuilderExtensions
 {

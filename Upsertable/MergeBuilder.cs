@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
-using Upsertable.SqlServer.Internal.Extensions;
+using Upsertable.Internal.Extensions;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public class MergeBuilder(IEntityType type, DbContext db, Func<IEnumerable> provider)
 {

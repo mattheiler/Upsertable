@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Upsertable.SqlServer.Tests.Entities;
+namespace Upsertable.Tests.Entities;
 
 public class Qux
 {

@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public interface IMerge
 {

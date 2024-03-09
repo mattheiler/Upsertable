@@ -1,4 +1,4 @@
-﻿namespace Upsertable.SqlServer.SqlDataAdapter;
+﻿namespace Upsertable.SqlDataAdapter;
 
 public class SqlDataAdapterDataLoaderOptions
 {

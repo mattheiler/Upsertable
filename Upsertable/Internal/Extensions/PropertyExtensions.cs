@@ -4,7 +4,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.SqlServer.Internal.Extensions;
+namespace Upsertable.Internal.Extensions;
 
 internal static class PropertyExtensions
 {

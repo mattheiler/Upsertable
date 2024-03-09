@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public class OutputTable
 {

@@ -1,4 +1,4 @@
-﻿namespace Upsertable.SqlServer.SqlBulkCopy;
+﻿namespace Upsertable.SqlBulkCopy;
 
 public class SqlBulkCopyDataLoaderOptions
 {

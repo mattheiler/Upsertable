@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Upsertable.SqlServer.Tests.Entities;
+using Upsertable.Tests.Entities;
 
-namespace Upsertable.SqlServer.Tests;
+namespace Upsertable.Tests;
 
 public class TestDbContext : DbContext
 {

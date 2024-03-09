@@ -1,4 +1,4 @@
-﻿namespace Upsertable.SqlServer.Tests.Entities;
+﻿namespace Upsertable.Tests.Entities;
 
 public class Fum
 {

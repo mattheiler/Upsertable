@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 
-namespace Upsertable.SqlServer.SqlBulkCopy;
+namespace Upsertable.SqlBulkCopy;
 
 public class SqlBulkCopyDataLoader(SqlBulkCopyDataLoaderOptions options) : IDataLoader
 {

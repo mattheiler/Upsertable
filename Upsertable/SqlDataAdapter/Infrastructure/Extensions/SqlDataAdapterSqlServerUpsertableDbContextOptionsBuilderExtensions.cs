@@ -1,7 +1,7 @@
 ﻿using System;
-using Upsertable.SqlServer.Infrastructure;
+using Upsertable.Infrastructure;
 
-namespace Upsertable.SqlServer.SqlDataAdapter.Infrastructure.Extensions;
+namespace Upsertable.SqlDataAdapter.Infrastructure.Extensions;
 
 public static class SqlDataAdapterSqlServerUpsertableDbContextOptionsBuilderExtensions
 {

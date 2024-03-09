@@ -11,9 +11,9 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
-using Upsertable.SqlServer.Internal.Extensions;
+using Upsertable.Internal.Extensions;
 
-namespace Upsertable.SqlServer;
+namespace Upsertable;
 
 public class Merge(DbContext db, Source source, IEntityType target, Output output, Func<IEnumerable> provider)
     : IMerge

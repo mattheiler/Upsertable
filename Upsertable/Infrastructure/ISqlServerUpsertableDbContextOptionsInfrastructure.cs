@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Upsertable.SqlServer.Infrastructure;
+namespace Upsertable.Infrastructure;
 
 public interface ISqlServerUpsertableDbContextOptionsInfrastructure
 {

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Upsertable.SqlServer.Infrastructure;
+namespace Upsertable.Infrastructure;
 
 public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExtension
 {

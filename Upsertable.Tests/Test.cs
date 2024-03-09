@@ -2,13 +2,13 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Upsertable.SqlServer.Infrastructure.Extensions;
-using Upsertable.SqlServer.SqlBulkCopy.Infrastructure.Extensions;
-using Upsertable.SqlServer.SqlDataAdapter.Extensions;
-using Upsertable.SqlServer.Tests.Entities;
+using Upsertable.Infrastructure.Extensions;
+using Upsertable.SqlBulkCopy.Infrastructure.Extensions;
+using Upsertable.SqlDataAdapter.Extensions;
+using Upsertable.Tests.Entities;
 using Xunit;
 
-namespace Upsertable.SqlServer.Tests;
+namespace Upsertable.Tests;
 
 public class Test
 {
@@ -18,7 +18,7 @@ public class Test
     {
         var services = new ServiceCollection();
 
-        services.AddDbContext<TestDbContext>(db => db.UseSqlServer("Server=.,61805;Database=Test;User Id=SA;Password=YourStrong@Passw0rd;TrustServerCertificate=True;Encrypt=False", sql => sql.UseUpsertable(merge => merge.UseSqlBulkCopy())));
+        services.AddDbContext<TestDbContext>(db => db.UseSqlServer("Server=.,61805;Database=Test;User Id=SA;Password=YourStrong@Passw0rd;TrustServerCertificate=True;Encrypt=False", sql => sql.UseUpsertable(merge => SqlBulkCopySqlServerUpsertableDbContextOptionsBuilderExtensions.UseSqlBulkCopy(merge))));
 
         var provider = services.BuildServiceProvider();
         var context = provider.GetService<TestDbContext>();

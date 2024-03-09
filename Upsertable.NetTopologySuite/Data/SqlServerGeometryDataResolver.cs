@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 
-namespace Upsertable.SqlServer.NetTopologySuite.Data;
+namespace Upsertable.NetTopologySuite.Data;
 
 public class SqlServerGeometryDataResolver<TGeometry> : IDataResolver
     where TGeometry : Geometry
