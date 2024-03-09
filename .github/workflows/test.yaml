@@ -29,7 +29,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Update database
-        run: dotnet ef database update --project Upsertable.SqlServer.Tests
+        run: dotnet ef database update --project Upsertable.Tests
 
       - name: Test
         run: dotnet test
