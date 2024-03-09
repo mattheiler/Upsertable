@@ -1,8 +1,7 @@
 ﻿using System.Collections;
 using System.Data;
-using Upsertable.SqlServer;
 
-namespace Upsertable.Abstractions;
+namespace Upsertable.SqlServer;
 
 public interface IDataTableFactory
 {
