@@ -11,7 +11,7 @@ public static class SqlBulkCopySqlServerUpsertableDbContextOptionsBuilderExtensi
         {
             var options = new SqlBulkCopyDataTableLoaderOptions();
             configure?.Invoke(options);
-            return new SqlBulkCopyDataTableLoader(options);
+            return new SqlBulkCopyDataLoader(options);
         });
     }
 }

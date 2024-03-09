@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -8,18 +7,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Upsertable.Abstractions;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
 public class SqlServerMergeSourceTable
 {
-    private readonly SqlServerMergeSource _source;
-    private readonly IDataTableLoader _loaders;
+    private readonly IDataLoader _loaders;
     private readonly IDictionary<Type, IDataResolver> _resolvers;
+    private readonly SqlServerMergeSource _source;
 
-    public SqlServerMergeSourceTable(SqlServerMergeSource source, IDataTableLoader loaders, IEnumerable<IDataResolver> resolvers)
+    public SqlServerMergeSourceTable(SqlServerMergeSource source, IDataLoader loaders, IEnumerable<IDataResolver> resolvers)
     {
         _source = source;
         _loaders = loaders;

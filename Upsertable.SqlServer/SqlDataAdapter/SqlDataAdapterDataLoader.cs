@@ -11,11 +11,11 @@ using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer.SqlDataAdapter;
 
-public class SqlDataAdapterDataTableLoader : IDataTableLoader
+public class SqlDataAdapterDataLoader : IDataLoader
 {
     private readonly SqlDataAdapterDataTableLoaderOptions _options;
 
-    public SqlDataAdapterDataTableLoader(SqlDataAdapterDataTableLoaderOptions options)
+    public SqlDataAdapterDataLoader(SqlDataAdapterDataTableLoaderOptions options)
     {
         _options = options;
     }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Upsertable.SqlServer;
 
-public interface IDataTableLoader
+public interface IDataLoader
 {
     Task LoadAsync(SqlServerMergeSource source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default);
 }

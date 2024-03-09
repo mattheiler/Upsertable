@@ -6,11 +6,11 @@ using Microsoft.Data.SqlClient;
 
 namespace Upsertable.SqlServer.SqlBulkCopy;
 
-public class SqlBulkCopyDataTableLoader : IDataTableLoader
+public class SqlBulkCopyDataLoader : IDataLoader
 {
     private readonly SqlBulkCopyDataTableLoaderOptions _options;
 
-    public SqlBulkCopyDataTableLoader(SqlBulkCopyDataTableLoaderOptions options)
+    public SqlBulkCopyDataLoader(SqlBulkCopyDataTableLoaderOptions options)
     {
         _options = options;
     }

@@ -11,7 +11,7 @@ public static class SqlDataAdapterSqlServerUpsertableDbContextOptionsBuilderExte
         {
             var options = new SqlDataAdapterDataTableLoaderOptions();
             configure?.Invoke(options);
-            return new SqlDataAdapterDataTableLoader(options);
+            return new SqlDataAdapterDataLoader(options);
         });
     }
 }

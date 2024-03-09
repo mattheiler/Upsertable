@@ -8,6 +8,6 @@ public static class SqlDataAdapterSqlServerMergeBuilderExtensions
     {
         var options = new SqlDataAdapterDataTableLoaderOptions();
         configure?.Invoke(options);
-        return @this.WithSourceLoader(new SqlDataAdapterDataTableLoader(options));
+        return @this.WithSourceLoader(new SqlDataAdapterDataLoader(options));
     }
 }

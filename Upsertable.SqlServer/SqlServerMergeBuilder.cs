@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.Abstractions;
 using Upsertable.Data;
 
 namespace Upsertable.SqlServer;
@@ -24,7 +23,7 @@ public class SqlServerMergeBuilder
 
     private MergeBehavior _behavior;
     private IReadOnlyCollection<IPropertyBase> _insert;
-    private IDataTableLoader _loader;
+    private IDataLoader _loader;
 
     private IReadOnlyCollection<IProperty> _on;
     private bool _readonly;
@@ -43,7 +42,7 @@ public class SqlServerMergeBuilder
     public IMerge ToMerge()
     {
         var resolvers = _dbContext.GetService<IEnumerable<IDataResolver>>();
-        var loader = _loader ?? _dbContext.GetService<IDataTableLoader>();
+        var loader = _loader ?? _dbContext.GetService<IDataLoader>();
 
         var keys = _entityType.FindPrimaryKey().Properties;
         var navigations =
@@ -129,7 +128,7 @@ public class SqlServerMergeBuilder
         return this;
     }
 
-    public SqlServerMergeBuilder WithSourceLoader(IDataTableLoader loader)
+    public SqlServerMergeBuilder WithSourceLoader(IDataLoader loader)
     {
         _loader = loader;
         return this;
@@ -192,9 +191,9 @@ public class SqlServerMergeBuilder<T> : SqlServerMergeBuilder where T : class
         return (SqlServerMergeBuilder<T>)Merge(property, build);
     }
 
-    public new SqlServerMergeBuilder<T> WithSourceLoader(IDataTableLoader tableLoader)
+    public new SqlServerMergeBuilder<T> WithSourceLoader(IDataLoader loader)
     {
-        return (SqlServerMergeBuilder<T>)base.WithSourceLoader(tableLoader);
+        return (SqlServerMergeBuilder<T>)base.WithSourceLoader(loader);
     }
 
     public new SqlServerMergeBuilder<T> On(IReadOnlyCollection<IProperty> on)

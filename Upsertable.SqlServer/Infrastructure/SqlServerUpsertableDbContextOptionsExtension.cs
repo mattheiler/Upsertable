@@ -5,7 +5,6 @@ using System.Text;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Upsertable.Abstractions;
 
 namespace Upsertable.SqlServer.Infrastructure;
 
@@ -39,10 +38,10 @@ public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExt
 
     DbContextOptionsExtensionInfo IDbContextOptionsExtension.Info => Info;
 
-    public SqlServerUpsertableDbContextOptionsExtension WithSourceLoader(Func<IServiceProvider, IDataTableLoader> factory)
+    public SqlServerUpsertableDbContextOptionsExtension WithSourceLoader(Func<IServiceProvider, IDataLoader> factory)
     {
         var clone = Clone();
-        clone._loader = new ServiceDescriptor(typeof(IDataTableLoader), factory, ServiceLifetime.Singleton);
+        clone._loader = new ServiceDescriptor(typeof(IDataLoader), factory, ServiceLifetime.Singleton);
         return clone;
     }
 

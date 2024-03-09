@@ -5,7 +5,7 @@ namespace Upsertable.SqlServer.Infrastructure.Extensions;
 
 public static class UpsertableDbContextOptionsBuilderExtensions
 {
-    public static SqlServerDbContextOptionsBuilder UseUpsertable(this SqlServerDbContextOptionsBuilder @this, Func<IServiceProvider, IDataTableLoader> loader)
+    public static SqlServerDbContextOptionsBuilder UseUpsertable(this SqlServerDbContextOptionsBuilder @this, Func<IServiceProvider, IDataLoader> loader)
     {
         return @this.UseUpsertable(merge => merge.SourceLoader(loader));
     }

@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.Abstractions;
+namespace Upsertable.SqlServer;
 
 public interface IDataResolver
 {

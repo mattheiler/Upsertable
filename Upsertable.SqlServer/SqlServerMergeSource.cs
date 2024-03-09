@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.Abstractions;
 using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
@@ -13,12 +12,12 @@ namespace Upsertable.SqlServer;
 public class SqlServerMergeSource
 {
     private readonly DbContext _db;
+    private readonly IDataLoader _loader;
     private readonly IList<IPropertyBase> _properties;
-    private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
-    private readonly IDataTableLoader _loader;
     private readonly IEnumerable<IDataResolver> _resolvers;
+    private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-    public SqlServerMergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IDataTableLoader loader, IEnumerable<IDataResolver> resolvers)
+    public SqlServerMergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IDataLoader loader, IEnumerable<IDataResolver> resolvers)
     {
         _db = db;
         _properties = properties.ToList();

@@ -8,6 +8,6 @@ public static class SqlBulkCopySqlServerMergeBuilderExtensions
     {
         var options = new SqlBulkCopyDataTableLoaderOptions();
         configure?.Invoke(options);
-        return @this.WithSourceLoader(new SqlBulkCopyDataTableLoader(options));
+        return @this.WithSourceLoader(new SqlBulkCopyDataLoader(options));
     }
 }

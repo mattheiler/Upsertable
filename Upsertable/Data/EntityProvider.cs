@@ -17,10 +17,8 @@ public static class EntityProvider
         {
             var entities = new List<object>();
 
-#pragma warning disable EF1001 // Internal EF Core API usage.
             var materializationContext = new MaterializationContext(new ValueBuffer(), dbContext);
             var materializer = dbContext.GetDependencies().StateManager.EntityMaterializerSource.GetMaterializer(skipNavigation.JoinEntityType);
-#pragma warning restore EF1001 // Internal EF Core API usage.
 
             foreach (var source in declaringEntityProviderFunc())
             foreach (var target in (IEnumerable)skipNavigation.GetCollectionAccessor()?.GetOrCreate(source, false) ?? Enumerable.Empty<object>())

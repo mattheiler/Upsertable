@@ -1,21 +1,20 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Upsertable.Abstractions;
 
 namespace Upsertable.SqlServer.Infrastructure;
 
 public class SqlServerUpsertableDbContextOptionsBuilder : ISqlServerUpsertableDbContextOptionsInfrastructure
 {
-    private readonly SqlServerDbContextOptionsBuilder _optionsBuilder;
+    private readonly SqlServerDbContextOptionsBuilder _builder;
 
-    public SqlServerUpsertableDbContextOptionsBuilder(SqlServerDbContextOptionsBuilder optionsBuilder)
+    public SqlServerUpsertableDbContextOptionsBuilder(SqlServerDbContextOptionsBuilder builder)
     {
-        _optionsBuilder = optionsBuilder;
+        _builder = builder;
     }
 
-    SqlServerDbContextOptionsBuilder ISqlServerUpsertableDbContextOptionsInfrastructure.OptionsBuilder => _optionsBuilder;
+    SqlServerDbContextOptionsBuilder ISqlServerUpsertableDbContextOptionsInfrastructure.OptionsBuilder => _builder;
 
-    public SqlServerUpsertableDbContextOptionsBuilder SourceLoader(Func<IServiceProvider, IDataTableLoader> factory)
+    public SqlServerUpsertableDbContextOptionsBuilder SourceLoader(Func<IServiceProvider, IDataLoader> factory)
     {
         return WithOption(e => e.WithSourceLoader(factory));
     }
@@ -27,7 +26,7 @@ public class SqlServerUpsertableDbContextOptionsBuilder : ISqlServerUpsertableDb
 
     private SqlServerUpsertableDbContextOptionsBuilder WithOption(Func<SqlServerUpsertableDbContextOptionsExtension, SqlServerUpsertableDbContextOptionsExtension> configure)
     {
-        var relational = ((IRelationalDbContextOptionsBuilderInfrastructure)_optionsBuilder).OptionsBuilder;
+        var relational = ((IRelationalDbContextOptionsBuilderInfrastructure)_builder).OptionsBuilder;
         var extension = relational.Options.FindExtension<SqlServerUpsertableDbContextOptionsExtension>() ?? new SqlServerUpsertableDbContextOptionsExtension();
 
         ((IDbContextOptionsBuilderInfrastructure)relational).AddOrUpdateExtension(configure(extension));
