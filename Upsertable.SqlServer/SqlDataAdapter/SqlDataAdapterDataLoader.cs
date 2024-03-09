@@ -13,9 +13,9 @@ namespace Upsertable.SqlServer.SqlDataAdapter;
 
 public class SqlDataAdapterDataLoader : IDataLoader
 {
-    private readonly SqlDataAdapterDataTableLoaderOptions _options;
+    private readonly SqlDataAdapterDataLoaderOptions _options;
 
-    public SqlDataAdapterDataLoader(SqlDataAdapterDataTableLoaderOptions options)
+    public SqlDataAdapterDataLoader(SqlDataAdapterDataLoaderOptions options)
     {
         _options = options;
     }

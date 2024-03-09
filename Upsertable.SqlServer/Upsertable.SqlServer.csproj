@@ -17,4 +17,8 @@
 	  <ProjectReference Include="..\Upsertable\Upsertable.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="SqlDataAdapter\Infrastructure\Extensions\" />
+	</ItemGroup>
+
 </Project>

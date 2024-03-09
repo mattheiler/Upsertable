@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -13,66 +11,27 @@ namespace Upsertable.SqlServer;
 
 public class SqlServerMergeBuilder
 {
-    private readonly ICollection<IMerge> _after = new List<IMerge>();
-    private readonly ICollection<IMerge> _before = new List<IMerge>();
-    private readonly DbContext _dbContext;
+    private readonly List<IMerge> _after = new();
+    private readonly List<IMerge> _before = new();
+    private readonly DbContext _db;
     private readonly List<INavigation> _dependents = new();
-    private readonly EntityProviderFunc _entityProviderFunc;
-    private readonly IEntityType _entityType;
+    private readonly EntityProviderFunc _provider;
     private readonly List<INavigation> _principals = new();
-
     private MergeBehavior _behavior;
     private IReadOnlyCollection<IPropertyBase> _insert;
     private IDataLoader _loader;
-
     private IReadOnlyCollection<IProperty> _on;
     private bool _readonly;
     private IReadOnlyCollection<IPropertyBase> _update;
 
-    public SqlServerMergeBuilder(DbContext dbContext, IEntityType entityType, EntityProviderFunc entityProviderFunc)
+    public SqlServerMergeBuilder(DbContext db, IEntityType entityType, EntityProviderFunc provider)
     {
-        _dbContext = dbContext;
-        _entityType = entityType;
-        _entityProviderFunc = entityProviderFunc;
+        _db = db;
+        EntityType = entityType;
+        _provider = provider;
     }
 
-    // ReSharper disable once ConvertToAutoPropertyWhenPossible
-    internal IEntityType EntityType => _entityType;
-
-    public IMerge ToMerge()
-    {
-        var resolvers = _dbContext.GetService<IEnumerable<IDataResolver>>();
-        var loader = _loader ?? _dbContext.GetService<IDataLoader>();
-
-        var keys = _entityType.FindPrimaryKey().Properties;
-        var navigations =
-            from navigation in _entityType.GetNavigations()
-            where !navigation.IsOnDependent
-            where !navigation.IsCollection
-            where navigation.TargetEntityType.IsOwned()
-            select navigation;
-        var properties = _entityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
-
-        var source = new SqlServerMergeSource(_dbContext, properties, loader, resolvers);
-        var on = _on ?? keys;
-        var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
-        var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
-        var output = new SqlServerMergeOutput(_dbContext, on.Union(_entityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
-        var merge = new SqlServerMerge(_dbContext, _entityType, source, output, _entityProviderFunc) { Behavior = _behavior, IsReadOnly = _readonly };
-
-        merge.On.AddRange(on);
-
-        if (insert != null) merge.Insert.AddRange(insert);
-        if (update != null) merge.Update.AddRange(update);
-
-        merge.Principals.AddRange(_principals);
-        merge.Dependents.AddRange(_dependents);
-
-        return
-            _before.Any() || _after.Any()
-                ? new MergeComposite(_before.Append(merge).Concat(_after))
-                : merge;
-    }
+    internal IEntityType EntityType { get; }
 
     public SqlServerMergeBuilder AsReadOnly(bool @readonly = true)
     {
@@ -136,11 +95,11 @@ public class SqlServerMergeBuilder
 
     protected SqlServerMergeBuilder Merge<TProperty>(LambdaExpression property, Action<SqlServerMergeBuilder<TProperty>> build) where TProperty : class
     {
-        var navigationBase = property.Body is MemberExpression body ? _entityType.FindNavigation(body.Member) ?? _entityType.FindSkipNavigation(body.Member) as INavigationBase : default;
+        var navigationBase = property.Body is MemberExpression body ? EntityType.FindNavigation(body.Member) ?? EntityType.FindSkipNavigation(body.Member) as INavigationBase : default;
         if (navigationBase == null)
             throw new ArgumentException("Expression body must describe a navigation property.");
 
-        var builder = new SqlServerMergeBuilder<TProperty>(_dbContext, _dbContext.Model.FindEntityType(typeof(TProperty)), EntityProvider.Lazy(navigationBase, _entityProviderFunc));
+        var builder = new SqlServerMergeBuilder<TProperty>(_db, _db.Model.FindEntityType(typeof(TProperty)), EntityProvider.Lazy(navigationBase, _provider));
 
         build(builder);
 
@@ -149,7 +108,7 @@ public class SqlServerMergeBuilder
             case ISkipNavigation skipNavigation:
             {
                 var joins =
-                    new SqlServerMergeBuilder(_dbContext, skipNavigation.JoinEntityType, EntityProvider.Join(_dbContext, skipNavigation, _entityProviderFunc))
+                    new SqlServerMergeBuilder(_db, skipNavigation.JoinEntityType, EntityProvider.Join(_db, skipNavigation, _provider))
                         .WithBehavior(MergeBehavior.Insert)
                         .ToMerge();
 
@@ -168,51 +127,39 @@ public class SqlServerMergeBuilder
         }
     }
 
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public IMerge ToMerge()
     {
-        return ToMerge().ExecuteAsync(cancellationToken);
-    }
-}
+        var resolvers = _db.GetService<IEnumerable<IDataResolver>>();
+        var loader = _loader ?? _db.GetService<IDataLoader>();
 
-public class SqlServerMergeBuilder<T> : SqlServerMergeBuilder where T : class
-{
-    public SqlServerMergeBuilder(DbContext dbContext, IEntityType entityType, EntityProviderFunc entityProviderFunc)
-        : base(dbContext, entityType, entityProviderFunc)
-    {
-    }
+        var primary = EntityType.FindPrimaryKey() ?? throw new InvalidOperationException("Primary key must not be null.");
+        var keys = primary.Properties;
+        var navigations =
+            from navigation in EntityType.GetNavigations()
+            where !navigation.IsOnDependent
+            where !navigation.IsCollection
+            where navigation.TargetEntityType.IsOwned()
+            select navigation;
+        var properties = EntityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
-    public SqlServerMergeBuilder<T> Merge<TProperty>(Expression<Func<T, TProperty>> property, Action<SqlServerMergeBuilder<TProperty>> build) where TProperty : class
-    {
-        return (SqlServerMergeBuilder<T>)base.Merge(property, build);
-    }
+        var source = new SqlServerMergeSource(_db, properties, loader, resolvers);
+        var on = _on ?? keys;
+        var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
+        var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
+        var output = new SqlServerMergeOutput(_db, on.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
+        var merge = new SqlServerMerge(_db, EntityType, source, output, _provider) { Behavior = _behavior, IsReadOnly = _readonly };
 
-    public SqlServerMergeBuilder<T> MergeMany<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> property, Action<SqlServerMergeBuilder<TProperty>> build) where TProperty : class
-    {
-        return (SqlServerMergeBuilder<T>)Merge(property, build);
-    }
+        merge.On.AddRange(on);
 
-    public new SqlServerMergeBuilder<T> WithSourceLoader(IDataLoader loader)
-    {
-        return (SqlServerMergeBuilder<T>)base.WithSourceLoader(loader);
-    }
+        if (insert != null) merge.Insert.AddRange(insert);
+        if (update != null) merge.Update.AddRange(update);
 
-    public new SqlServerMergeBuilder<T> On(IReadOnlyCollection<IProperty> on)
-    {
-        return (SqlServerMergeBuilder<T>)base.On(on);
-    }
+        merge.Principals.AddRange(_principals);
+        merge.Dependents.AddRange(_dependents);
 
-    public new SqlServerMergeBuilder<T> WithBehavior(MergeBehavior behavior, bool enable = true)
-    {
-        return (SqlServerMergeBuilder<T>)base.WithBehavior(behavior, enable);
-    }
-
-    public new SqlServerMergeBuilder<T> Insert(IReadOnlyCollection<IPropertyBase> insert)
-    {
-        return (SqlServerMergeBuilder<T>)base.Insert(insert);
-    }
-
-    public new SqlServerMergeBuilder<T> Update(IReadOnlyCollection<IPropertyBase> update)
-    {
-        return (SqlServerMergeBuilder<T>)base.Update(update);
+        return
+            _before.Any() || _after.Any()
+                ? new MergeComposite(_before.Append(merge).Concat(_after))
+                : merge;
     }
 }

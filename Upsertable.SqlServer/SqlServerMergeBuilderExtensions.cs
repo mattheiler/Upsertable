@@ -88,7 +88,7 @@ public static class SqlServerMergeBuilderExtensions
                 else
                 {
                     var navigation = type.FindNavigation(member.Member) ?? throw new InvalidOperationException($"Expected a navigation property: '{member}'.");
-                    var entity = type.Model.FindEntityType(navigation.ClrType);
+                    var entity = type.Model.FindEntityType(navigation.ClrType) ?? throw new InvalidOperationException("Entity type not found.");
                     if (!entity.IsOwned())
                         throw new InvalidOperationException($"Expected an owned navigation property: '{member}'.");
 

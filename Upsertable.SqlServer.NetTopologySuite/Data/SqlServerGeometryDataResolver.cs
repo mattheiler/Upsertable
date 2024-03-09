@@ -15,7 +15,9 @@ public class SqlServerGeometryDataResolver<TGeometry> : IDataResolver
 
     public SqlServerGeometryDataResolver()
     {
+#pragma warning disable EF1001 // Internal EF Core API usage.
         _converter = new GeometryValueConverter<TGeometry>(new SqlServerBytesReader(), new SqlServerBytesWriter());
+#pragma warning restore EF1001 // Internal EF Core API usage.
     }
 
     public Type Type => typeof(TGeometry);

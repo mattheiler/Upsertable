@@ -8,9 +8,9 @@ namespace Upsertable.SqlServer.SqlBulkCopy;
 
 public class SqlBulkCopyDataLoader : IDataLoader
 {
-    private readonly SqlBulkCopyDataTableLoaderOptions _options;
+    private readonly SqlBulkCopyDataLoaderOptions _options;
 
-    public SqlBulkCopyDataLoader(SqlBulkCopyDataTableLoaderOptions options)
+    public SqlBulkCopyDataLoader(SqlBulkCopyDataLoaderOptions options)
     {
         _options = options;
     }

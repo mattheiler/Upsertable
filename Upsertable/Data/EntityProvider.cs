@@ -11,22 +11,24 @@ namespace Upsertable.Data;
 
 public static class EntityProvider
 {
-    public static EntityProviderFunc Join(DbContext dbContext, ISkipNavigation skipNavigation, EntityProviderFunc declaringEntityProviderFunc)
+    public static EntityProviderFunc Join(DbContext db, ISkipNavigation navigation, EntityProviderFunc provider)
     {
         return () =>
         {
             var entities = new List<object>();
 
-            var materializationContext = new MaterializationContext(new ValueBuffer(), dbContext);
-            var materializer = dbContext.GetDependencies().StateManager.EntityMaterializerSource.GetMaterializer(skipNavigation.JoinEntityType);
+#pragma warning disable EF1001 // Internal EF Core API usage.
+            var context = new MaterializationContext(new ValueBuffer(), db);
+            var materializer = db.GetDependencies().StateManager.EntityMaterializerSource.GetMaterializer(navigation.JoinEntityType);
+#pragma warning restore EF1001 // Internal EF Core API usage.
 
-            foreach (var source in declaringEntityProviderFunc())
-            foreach (var target in (IEnumerable)skipNavigation.GetCollectionAccessor()?.GetOrCreate(source, false) ?? Enumerable.Empty<object>())
+            foreach (var source in provider())
+            foreach (var target in (IEnumerable)navigation.GetCollectionAccessor()?.GetOrCreate(source, false) ?? Enumerable.Empty<object>())
             {
-                var instance = materializer(materializationContext);
+                var instance = materializer(context);
 
-                skipNavigation.ForeignKey.Properties.SetValues(instance, skipNavigation.ForeignKey.PrincipalKey.Properties.GetValues(source));
-                skipNavigation.Inverse.ForeignKey.Properties.SetValues(instance, skipNavigation.Inverse.ForeignKey.PrincipalKey.Properties.GetValues(target));
+                navigation.ForeignKey.Properties.SetValues(instance, navigation.ForeignKey.PrincipalKey.Properties.GetValues(source));
+                navigation.Inverse.ForeignKey.Properties.SetValues(instance, navigation.Inverse.ForeignKey.PrincipalKey.Properties.GetValues(target));
 
                 entities.Add(instance);
             }
@@ -35,19 +37,19 @@ public static class EntityProvider
         };
     }
 
-    public static EntityProviderFunc Lazy(INavigationBase navigationBase, EntityProviderFunc declaringEntityProviderFunc)
+    public static EntityProviderFunc Lazy(INavigationBase navigation, EntityProviderFunc provider)
     {
         return () =>
         {
             var entities = new List<object>();
 
-            foreach (var source in declaringEntityProviderFunc())
+            foreach (var source in provider())
             {
-                var value = navigationBase.GetValue(source);
+                var value = navigation.GetValue(source);
                 if (value == null)
                     continue;
 
-                if (navigationBase.IsCollection)
+                if (navigation.IsCollection)
                     entities.AddRange(((ICollection)value).Cast<object>());
                 else
                     entities.Add(value);

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Upsertable.SqlServer.Infrastructure.Extensions;
 using Upsertable.SqlServer.SqlBulkCopy.Infrastructure.Extensions;
+using Upsertable.SqlServer.SqlDataAdapter.Extensions;
 using Upsertable.SqlServer.Tests.Entities;
 using Xunit;
 
@@ -102,7 +103,8 @@ public class Test
                                     {
                                         fums
                                             .On(fum => fum.Code)
-                                            .Insert();
+                                            .Insert()
+                                            .UsingSqlDataAdapter();
                                     });
                             });
                     });

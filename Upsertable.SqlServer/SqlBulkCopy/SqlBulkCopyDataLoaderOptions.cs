@@ -1,6 +1,6 @@
 ﻿namespace Upsertable.SqlServer.SqlBulkCopy;
 
-public class SqlBulkCopyDataTableLoaderOptions
+public class SqlBulkCopyDataLoaderOptions
 {
     public int BulkCopyTimeout { get; set; } = 30;
 
