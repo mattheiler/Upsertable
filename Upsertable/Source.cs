@@ -9,21 +9,10 @@ using Upsertable.Internal.Extensions;
 
 namespace Upsertable;
 
-public class Source
+public class Source(DbContext db, IEnumerable<IPropertyBase> properties, IDataLoader loader, IEnumerable<IDataResolver> resolvers)
 {
-    private readonly DbContext _db;
-    private readonly IDataLoader _loader;
-    private readonly IList<IPropertyBase> _properties;
-    private readonly IEnumerable<IDataResolver> _resolvers;
+    private readonly IList<IPropertyBase> _properties = properties.ToList();
     private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
-
-    public Source(DbContext db, IEnumerable<IPropertyBase> properties, IDataLoader loader, IEnumerable<IDataResolver> resolvers)
-    {
-        _db = db;
-        _properties = properties.ToList();
-        _loader = loader;
-        _resolvers = resolvers;
-    }
 
     public async Task<SourceTable> CreateTableAsync(CancellationToken cancellationToken = default)
     {
@@ -44,15 +33,15 @@ public class Source
 
         var command = $"CREATE TABLE {GetTableName()} ({string.Join(", ", columns)})";
 
-        await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
+        await db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
-        return new SourceTable(this, _loader, _resolvers);
+        return new SourceTable(this, loader, resolvers);
     }
 
     public async Task DropTableAsync()
     {
 #pragma warning disable EF1002
-        await _db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
+        await db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
 #pragma warning restore EF1002
     }
 

@@ -3,16 +3,9 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Upsertable.Infrastructure;
 
-public class SqlServerUpsertableDbContextOptionsBuilder : ISqlServerUpsertableDbContextOptionsInfrastructure
+public class SqlServerUpsertableDbContextOptionsBuilder(SqlServerDbContextOptionsBuilder builder) : ISqlServerUpsertableDbContextOptionsInfrastructure
 {
-    private readonly SqlServerDbContextOptionsBuilder _builder;
-
-    public SqlServerUpsertableDbContextOptionsBuilder(SqlServerDbContextOptionsBuilder builder)
-    {
-        _builder = builder;
-    }
-
-    SqlServerDbContextOptionsBuilder ISqlServerUpsertableDbContextOptionsInfrastructure.OptionsBuilder => _builder;
+    SqlServerDbContextOptionsBuilder ISqlServerUpsertableDbContextOptionsInfrastructure.OptionsBuilder => builder;
 
     public SqlServerUpsertableDbContextOptionsBuilder SourceLoader(Func<IServiceProvider, IDataLoader> factory)
     {
@@ -26,7 +19,7 @@ public class SqlServerUpsertableDbContextOptionsBuilder : ISqlServerUpsertableDb
 
     private SqlServerUpsertableDbContextOptionsBuilder WithOption(Func<SqlServerUpsertableDbContextOptionsExtension, SqlServerUpsertableDbContextOptionsExtension> configure)
     {
-        var relational = ((IRelationalDbContextOptionsBuilderInfrastructure)_builder).OptionsBuilder;
+        var relational = ((IRelationalDbContextOptionsBuilderInfrastructure)builder).OptionsBuilder;
         var extension = relational.Options.FindExtension<SqlServerUpsertableDbContextOptionsExtension>() ?? new SqlServerUpsertableDbContextOptionsExtension();
 
         ((IDbContextOptionsBuilderInfrastructure)relational).AddOrUpdateExtension(configure(extension));

@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Upsertable.Infrastructure;
 
-public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExtension
+internal class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExtension
 {
     private ExtensionInfo? _info;
     private ServiceDescriptor? _loader;

@@ -11,22 +11,15 @@ using Upsertable.Internal.Extensions;
 
 namespace Upsertable.SqlDataAdapter;
 
-public class SqlDataAdapterDataLoader : IDataLoader
+public class SqlDataAdapterDataLoader(SqlDataAdapterDataLoaderOptions options) : IDataLoader
 {
-    private readonly SqlDataAdapterDataLoaderOptions _options;
-
-    public SqlDataAdapterDataLoader(SqlDataAdapterDataLoaderOptions options)
-    {
-        _options = options;
-    }
-
     public Task LoadAsync(Source source, DataTable table, DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken = default)
     {
         var command = new SqlCommand
         {
             Connection = (SqlConnection)connection,
             Transaction = (SqlTransaction?)transaction,
-            CommandTimeout = _options.CommandTimeout
+            CommandTimeout = options.CommandTimeout
         };
 
         foreach (var column in source.GetProperties())

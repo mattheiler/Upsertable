@@ -2,7 +2,7 @@
 
 namespace Upsertable.Infrastructure;
 
-public interface ISqlServerUpsertableDbContextOptionsInfrastructure
+internal interface ISqlServerUpsertableDbContextOptionsInfrastructure
 {
     SqlServerDbContextOptionsBuilder OptionsBuilder { get; }
 }

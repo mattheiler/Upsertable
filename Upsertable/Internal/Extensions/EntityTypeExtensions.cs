@@ -9,11 +9,6 @@ namespace Upsertable.Internal.Extensions;
 
 internal static class EntityTypeExtensions
 {
-    public static INavigationBase? FindNavigationBase(this IEntityType @this, string name)
-    {
-        return @this.FindNavigation(name) ?? (INavigationBase?)@this.FindSkipNavigation(name);
-    }
-
     public static INavigationBase? FindNavigationBase(this IEntityType @this, MemberInfo info)
     {
         return @this.FindNavigation(info) ?? (INavigationBase?)@this.FindSkipNavigation(info);

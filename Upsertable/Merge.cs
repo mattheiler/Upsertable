@@ -18,15 +18,15 @@ namespace Upsertable;
 public class Merge(DbContext db, Source source, IEntityType target, Output output, Func<IEnumerable> provider)
     : IMerge
 {
-    public List<IProperty> On { get; set; } = new();
+    public List<IProperty> On { get; set; } = [];
 
-    public List<IPropertyBase> Insert { get; } = new();
+    public List<IPropertyBase> Insert { get; } = [];
 
-    public List<IPropertyBase> Update { get; } = new();
+    public List<IPropertyBase> Update { get; } = [];
 
-    public List<INavigation> Dependents { get; } = new();
+    public List<INavigation> Dependents { get; } = [];
 
-    public List<INavigation> Principals { get; } = new();
+    public List<INavigation> Principals { get; } = [];
 
     public bool IsReadOnly { get; set; }
 
