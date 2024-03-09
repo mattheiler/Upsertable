@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Upsertable;
+namespace Upsertable.SqlServer;
 
 public class MergeComposite(IEnumerable<IMerge> merges) : IMerge
 {

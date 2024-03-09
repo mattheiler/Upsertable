@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.Extensions;
+using Upsertable.SqlServer.Internal.Extensions;
 
 namespace Upsertable.SqlServer;
 

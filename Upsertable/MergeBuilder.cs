@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
-using Upsertable.Extensions;
+using Upsertable.SqlServer.Internal.Extensions;
 
 namespace Upsertable.SqlServer;
 

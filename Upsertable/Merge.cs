@@ -11,7 +11,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
-using Upsertable.Extensions;
+using Upsertable.SqlServer.Internal.Extensions;
 
 namespace Upsertable.SqlServer;
 

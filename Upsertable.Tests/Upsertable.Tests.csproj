@@ -23,8 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Upsertable.SqlServer.NetTopologySuite\Upsertable.SqlServer.NetTopologySuite.csproj" />
-    <ProjectReference Include="..\Upsertable.SqlServer\Upsertable.SqlServer.csproj" />
+    <ProjectReference Include="..\Upsertable.NetTopologySuite\Upsertable.NetTopologySuite.csproj" />
     <ProjectReference Include="..\Upsertable\Upsertable.csproj" />
   </ItemGroup>
 

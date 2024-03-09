@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Upsertable;
+namespace Upsertable.SqlServer;
 
 [Flags]
 public enum MergeBehavior

@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Upsertable.Extensions;
+namespace Upsertable.SqlServer.Internal.Extensions;
 
 public static class EntityTypeExtensions
 {
