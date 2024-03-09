@@ -11,12 +11,12 @@ public static class EntityTypeExtensions
 {
     public static INavigationBase? FindNavigationBase(this IEntityType @this, string name)
     {
-        return @this.FindNavigation(name) ?? @this.FindSkipNavigation(name) as INavigationBase;
+        return @this.FindNavigation(name) ?? (INavigationBase?)@this.FindSkipNavigation(name);
     }
 
     public static INavigationBase? FindNavigationBase(this IEntityType @this, MemberInfo info)
     {
-        return @this.FindNavigation(info) ?? @this.FindSkipNavigation(info) as INavigationBase;
+        return @this.FindNavigation(info) ?? (INavigationBase?)@this.FindSkipNavigation(info);
     }
 
     public static IEnumerable<IPropertyBase> GetPropertiesAndNavigations<T, TProperty>(this IEntityType @this, Expression<Func<T, TProperty>> lambda)
