@@ -8,34 +8,34 @@ using Upsertable.Data;
 
 namespace Upsertable.SqlServer;
 
-public static class SqlServerMergeBuilderExtensions
+public static class MergeBuilderExtensions
 {
-    public static SqlServerMergeBuilder<T> Merge<T>(this DbContext @this, IEnumerable<T> entities) where T : class
+    public static MergeBuilder<T> Merge<T>(this DbContext @this, IEnumerable<T> entities) where T : class
     {
-        return new SqlServerMergeBuilder<T>(@this, @this.Model.FindEntityType(typeof(T)), EntityProvider.List(entities));
+        return new MergeBuilder<T>(@this, @this.Model.FindEntityType(typeof(T)), EntityProvider.List(entities));
     }
 
-    public static SqlServerMergeBuilder<T> Insert<T>(this SqlServerMergeBuilder<T> @this) where T : class
+    public static MergeBuilder<T> Insert<T>(this MergeBuilder<T> @this) where T : class
     {
         return @this.WithBehavior(MergeBehavior.Insert);
     }
 
-    public static SqlServerMergeBuilder<T> Insert<T, TProperty>(this SqlServerMergeBuilder<T> @this, Expression<Func<T, TProperty>> insert) where T : class
+    public static MergeBuilder<T> Insert<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> insert) where T : class
     {
         return @this.WithBehavior(MergeBehavior.Insert).Insert(@this.EntityType.GetPropertiesAndNavigations(insert).ToList());
     }
 
-    public static SqlServerMergeBuilder<T> On<T, TProperty>(this SqlServerMergeBuilder<T> @this, Expression<Func<T, TProperty>> on) where T : class
+    public static MergeBuilder<T> On<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> on) where T : class
     {
         return @this.On(@this.EntityType.GetPropertiesAndNavigations(on).Cast<IProperty>().ToList());
     }
 
-    public static SqlServerMergeBuilder<T> Update<T>(this SqlServerMergeBuilder<T> @this) where T : class
+    public static MergeBuilder<T> Update<T>(this MergeBuilder<T> @this) where T : class
     {
         return @this.WithBehavior(MergeBehavior.Update);
     }
 
-    public static SqlServerMergeBuilder<T> Update<T, TProperty>(this SqlServerMergeBuilder<T> @this, Expression<Func<T, TProperty>> update) where T : class
+    public static MergeBuilder<T> Update<T, TProperty>(this MergeBuilder<T> @this, Expression<Func<T, TProperty>> update) where T : class
     {
         return @this.WithBehavior(MergeBehavior.Update).Update(@this.EntityType.GetPropertiesAndNavigations(update).ToList());
     }

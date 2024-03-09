@@ -9,7 +9,7 @@ using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
-public class SqlServerMergeSource
+public class Source
 {
     private readonly DbContext _db;
     private readonly IDataLoader _loader;
@@ -17,7 +17,7 @@ public class SqlServerMergeSource
     private readonly IEnumerable<IDataResolver> _resolvers;
     private readonly string _table = "#SOURCE_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-    public SqlServerMergeSource(DbContext db, IEnumerable<IPropertyBase> properties, IDataLoader loader, IEnumerable<IDataResolver> resolvers)
+    public Source(DbContext db, IEnumerable<IPropertyBase> properties, IDataLoader loader, IEnumerable<IDataResolver> resolvers)
     {
         _db = db;
         _properties = properties.ToList();
@@ -25,7 +25,7 @@ public class SqlServerMergeSource
         _resolvers = resolvers;
     }
 
-    public async Task<SqlServerMergeSourceTable> CreateTableAsync(CancellationToken cancellationToken = default)
+    public async Task<SourceTable> CreateTableAsync(CancellationToken cancellationToken = default)
     {
         var columns = new List<string>();
 
@@ -46,7 +46,7 @@ public class SqlServerMergeSource
 
         await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
-        return new SqlServerMergeSourceTable(this, _loader, _resolvers);
+        return new SourceTable(this, _loader, _resolvers);
     }
 
     public async Task DropTableAsync()

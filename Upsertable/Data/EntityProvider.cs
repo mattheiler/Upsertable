@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
@@ -23,14 +24,19 @@ public static class EntityProvider
 #pragma warning restore EF1001 // Internal EF Core API usage.
 
             foreach (var source in provider())
-            foreach (var target in (IEnumerable)navigation.GetCollectionAccessor()?.GetOrCreate(source, false) ?? Enumerable.Empty<object>())
             {
-                var instance = materializer(context);
+                var accessor = navigation.GetCollectionAccessor() ?? throw new InvalidOperationException("Navigation must be a collection.");
+                var targets = (IEnumerable)accessor.GetOrCreate(source, false);
 
-                navigation.ForeignKey.Properties.SetValues(instance, navigation.ForeignKey.PrincipalKey.Properties.GetValues(source));
-                navigation.Inverse.ForeignKey.Properties.SetValues(instance, navigation.Inverse.ForeignKey.PrincipalKey.Properties.GetValues(target));
+                foreach (var target in targets)
+                {
+                    var entity = materializer(context);
 
-                entities.Add(instance);
+                    navigation.ForeignKey.Properties.SetValues(entity, navigation.ForeignKey.PrincipalKey.Properties.GetValues(source));
+                    navigation.Inverse.ForeignKey.Properties.SetValues(entity, navigation.Inverse.ForeignKey.PrincipalKey.Properties.GetValues(target));
+
+                    entities.Add(entity);
+                }
             }
 
             return entities.Distinct();
@@ -46,8 +52,7 @@ public static class EntityProvider
             foreach (var source in provider())
             {
                 var value = navigation.GetValue(source);
-                if (value == null)
-                    continue;
+                if (value == null) continue;
 
                 if (navigation.IsCollection)
                     entities.AddRange(((ICollection)value).Cast<object>());

@@ -9,26 +9,26 @@ using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
-public class SqlServerMergeOutput
+public class Output
 {
     private readonly DbContext _db;
     private readonly IList<IProperty> _properties;
     private readonly string _table = "#OUTPUT_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-    public SqlServerMergeOutput(DbContext db, IEnumerable<IProperty> properties)
+    public Output(DbContext db, IEnumerable<IProperty> properties)
     {
         _db = db;
         _properties = properties.ToList();
     }
 
-    public async Task<SqlServerMergeOutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
+    public async Task<OutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
     {
         var columns = GetProperties().Select(property => $"{property.GetColumnNameInTable()} {property.GetColumnType()}");
         var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", columns)})";
 
         await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
-        return new SqlServerMergeOutputTable(this);
+        return new OutputTable(this);
     }
 
     public async Task DropTableAsync()

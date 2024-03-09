@@ -16,15 +16,15 @@ using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
-public class SqlServerMerge : IMerge
+public class Merge : IMerge
 {
     private readonly DbContext _db;
-    private readonly SqlServerMergeOutput _output;
+    private readonly Output _output;
     private readonly EntityProviderFunc _provider;
-    private readonly SqlServerMergeSource _source;
+    private readonly Source _source;
     private readonly IEntityType _target;
 
-    public SqlServerMerge(DbContext db, IEntityType target, SqlServerMergeSource source, SqlServerMergeOutput output, EntityProviderFunc provider)
+    public Merge(DbContext db, IEntityType target, Source source, Output output, EntityProviderFunc provider)
     {
         _db = db;
         _target = target;

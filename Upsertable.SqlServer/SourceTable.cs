@@ -12,13 +12,13 @@ using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
-public class SqlServerMergeSourceTable
+public class SourceTable
 {
     private readonly IDataLoader _loaders;
     private readonly IDictionary<Type, IDataResolver> _resolvers;
-    private readonly SqlServerMergeSource _source;
+    private readonly Source _source;
 
-    public SqlServerMergeSourceTable(SqlServerMergeSource source, IDataLoader loaders, IEnumerable<IDataResolver> resolvers)
+    public SourceTable(Source source, IDataLoader loaders, IEnumerable<IDataResolver> resolvers)
     {
         _source = source;
         _loaders = loaders;
@@ -36,7 +36,7 @@ public class SqlServerMergeSourceTable
     }
 
 
-    private DataTable CreateDataTable(SqlServerMergeSource source, IEnumerable entities)
+    private DataTable CreateDataTable(Source source, IEnumerable entities)
     {
         var table = new DataTable();
         var properties = source.GetProperties().ToList();

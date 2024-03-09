@@ -2,11 +2,11 @@
 
 namespace Upsertable.SqlServer;
 
-public class SqlServerMergeOutputTable
+public class OutputTable
 {
-    private readonly SqlServerMergeOutput _output;
+    private readonly Output _output;
 
-    public SqlServerMergeOutputTable(SqlServerMergeOutput output)
+    public OutputTable(Output output)
     {
         _output = output;
     }

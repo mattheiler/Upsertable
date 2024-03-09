@@ -9,7 +9,7 @@ using Upsertable.Data;
 
 namespace Upsertable.SqlServer;
 
-public class SqlServerMergeBuilder
+public class MergeBuilder
 {
     private readonly List<IMerge> _after = new();
     private readonly List<IMerge> _before = new();
@@ -24,7 +24,7 @@ public class SqlServerMergeBuilder
     private bool _readonly;
     private IReadOnlyCollection<IPropertyBase> _update;
 
-    public SqlServerMergeBuilder(DbContext db, IEntityType entityType, EntityProviderFunc provider)
+    public MergeBuilder(DbContext db, IEntityType entityType, EntityProviderFunc provider)
     {
         _db = db;
         EntityType = entityType;
@@ -33,73 +33,73 @@ public class SqlServerMergeBuilder
 
     internal IEntityType EntityType { get; }
 
-    public SqlServerMergeBuilder AsReadOnly(bool @readonly = true)
+    public MergeBuilder AsReadOnly(bool @readonly = true)
     {
         _readonly = @readonly;
         return this;
     }
 
-    public SqlServerMergeBuilder MergeBefore(IMerge merge)
+    public MergeBuilder MergeBefore(IMerge merge)
     {
         _after.Add(merge);
         return this;
     }
 
-    public SqlServerMergeBuilder MergeAfter(IMerge merge)
+    public MergeBuilder MergeAfter(IMerge merge)
     {
         _before.Add(merge);
         return this;
     }
 
-    public SqlServerMergeBuilder On(IReadOnlyCollection<IProperty> on)
+    public MergeBuilder On(IReadOnlyCollection<IProperty> on)
     {
         _on = on;
         return this;
     }
 
-    public SqlServerMergeBuilder Insert(IReadOnlyCollection<IPropertyBase> insert)
+    public MergeBuilder Insert(IReadOnlyCollection<IPropertyBase> insert)
     {
         _insert = insert;
         return this;
     }
 
-    public SqlServerMergeBuilder Update(IReadOnlyCollection<IPropertyBase> update)
+    public MergeBuilder Update(IReadOnlyCollection<IPropertyBase> update)
     {
         _update = update;
         return this;
     }
 
-    public SqlServerMergeBuilder WithBehavior(MergeBehavior behavior, bool enable = true)
+    public MergeBuilder WithBehavior(MergeBehavior behavior, bool enable = true)
     {
         _behavior = enable ? _behavior | behavior : _behavior & ~behavior;
         return this;
     }
 
-    public SqlServerMergeBuilder WithPrincipal(INavigation navigation)
+    public MergeBuilder WithPrincipal(INavigation navigation)
     {
         _principals.Add(navigation);
         return this;
     }
 
-    public SqlServerMergeBuilder WithDependent(INavigation navigation)
+    public MergeBuilder WithDependent(INavigation navigation)
     {
         _dependents.Add(navigation);
         return this;
     }
 
-    public SqlServerMergeBuilder WithSourceLoader(IDataLoader loader)
+    public MergeBuilder WithSourceLoader(IDataLoader loader)
     {
         _loader = loader;
         return this;
     }
 
-    protected SqlServerMergeBuilder Merge<TProperty>(LambdaExpression property, Action<SqlServerMergeBuilder<TProperty>> build) where TProperty : class
+    protected MergeBuilder Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
     {
         var navigationBase = property.Body is MemberExpression body ? EntityType.FindNavigation(body.Member) ?? EntityType.FindSkipNavigation(body.Member) as INavigationBase : default;
         if (navigationBase == null)
             throw new ArgumentException("Expression body must describe a navigation property.");
 
-        var builder = new SqlServerMergeBuilder<TProperty>(_db, _db.Model.FindEntityType(typeof(TProperty)), EntityProvider.Lazy(navigationBase, _provider));
+        var builder = new MergeBuilder<TProperty>(_db, _db.Model.FindEntityType(typeof(TProperty)), EntityProvider.Lazy(navigationBase, _provider));
 
         build(builder);
 
@@ -108,7 +108,7 @@ public class SqlServerMergeBuilder
             case ISkipNavigation skipNavigation:
             {
                 var joins =
-                    new SqlServerMergeBuilder(_db, skipNavigation.JoinEntityType, EntityProvider.Join(_db, skipNavigation, _provider))
+                    new MergeBuilder(_db, skipNavigation.JoinEntityType, EntityProvider.Join(_db, skipNavigation, _provider))
                         .WithBehavior(MergeBehavior.Insert)
                         .ToMerge();
 
@@ -142,12 +142,12 @@ public class SqlServerMergeBuilder
             select navigation;
         var properties = EntityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
-        var source = new SqlServerMergeSource(_db, properties, loader, resolvers);
+        var source = new Source(_db, properties, loader, resolvers);
         var on = _on ?? keys;
         var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
         var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
-        var output = new SqlServerMergeOutput(_db, on.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
-        var merge = new SqlServerMerge(_db, EntityType, source, output, _provider) { Behavior = _behavior, IsReadOnly = _readonly };
+        var output = new Output(_db, on.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
+        var merge = new Merge(_db, EntityType, source, output, _provider) { Behavior = _behavior, IsReadOnly = _readonly };
 
         merge.On.AddRange(on);
 

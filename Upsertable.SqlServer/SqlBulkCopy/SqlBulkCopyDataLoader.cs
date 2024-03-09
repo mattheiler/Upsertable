@@ -15,7 +15,7 @@ public class SqlBulkCopyDataLoader : IDataLoader
         _options = options;
     }
 
-    public async Task LoadAsync(SqlServerMergeSource source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+    public async Task LoadAsync(Source source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
     {
         using var copy = new Microsoft.Data.SqlClient.SqlBulkCopy((SqlConnection)connection, default, (SqlTransaction)transaction)
         {

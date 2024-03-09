@@ -10,8 +10,7 @@ public static class PropertyExtensions
 {
     public static string GetColumnNameInTable(this IProperty property)
     {
-        var name = property.DeclaringType.GetTableName();
-        if (name == null) throw new InvalidOperationException("Declaring type name is null.");
+        var name = property.DeclaringType.GetTableName() ?? throw new InvalidOperationException("Declaring type must be mapped to a table.");
         var schema = property.DeclaringType.GetSchema();
         var table = StoreObjectIdentifier.Table(name, schema);
         return property.GetColumnName(table);
@@ -29,8 +28,7 @@ public static class PropertyExtensions
 
     public static void SetValue(this IPropertyBase property, object obj, object value)
     {
-        var info = property.PropertyInfo;
-        if (info == null) throw new InvalidOperationException("Property info is null.");
+        var info = property.PropertyInfo ?? throw new InvalidOperationException("Property must not be a shadow property or mapped directly to a field.");
         if (property.IsIndexerProperty())
             info.SetValue(obj, value, new object[] { property.Name });
         else

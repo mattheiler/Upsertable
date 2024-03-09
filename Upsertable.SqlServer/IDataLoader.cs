@@ -7,5 +7,5 @@ namespace Upsertable.SqlServer;
 
 public interface IDataLoader
 {
-    Task LoadAsync(SqlServerMergeSource source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default);
+    Task LoadAsync(Source source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default);
 }
