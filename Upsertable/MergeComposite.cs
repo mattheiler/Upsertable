@@ -6,14 +6,9 @@ using System.Threading.Tasks;
 
 namespace Upsertable;
 
-public class MergeComposite : IMerge
+public class MergeComposite(IEnumerable<IMerge> merges) : IMerge
 {
-    private readonly List<IMerge> _merges;
-
-    public MergeComposite(IEnumerable<IMerge> merges)
-    {
-        _merges = merges.ToList();
-    }
+    private readonly List<IMerge> _merges = merges.ToList();
 
     public MergeComposite(params IMerge[] merges)
         : this(merges.AsEnumerable())

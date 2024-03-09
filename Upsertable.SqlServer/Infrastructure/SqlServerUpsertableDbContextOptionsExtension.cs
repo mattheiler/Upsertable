@@ -10,9 +10,9 @@ namespace Upsertable.SqlServer.Infrastructure;
 
 public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExtension
 {
-    private ExtensionInfo _info;
-    private ServiceDescriptor _loader;
-    private ServiceCollection _resolvers = new();
+    private ExtensionInfo? _info;
+    private ServiceDescriptor? _loader;
+    private ServiceCollection _resolvers = [];
 
     public SqlServerUpsertableDbContextOptionsExtension()
     {
@@ -27,7 +27,7 @@ public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExt
 
     public void ApplyServices(IServiceCollection services)
     {
-        services.TryAdd(_loader);
+        if (_loader!= null) services.TryAdd(_loader);
         services.TryAdd(_resolvers);
     }
 
@@ -68,7 +68,7 @@ public class SqlServerUpsertableDbContextOptionsExtension : IDbContextOptionsExt
 
     public class ExtensionInfo : DbContextOptionsExtensionInfo
     {
-        private string _logFragment;
+        private string? _logFragment;
 
         internal ExtensionInfo(IDbContextOptionsExtension extension) : base(extension)
         {

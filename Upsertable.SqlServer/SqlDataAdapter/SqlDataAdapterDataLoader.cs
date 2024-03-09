@@ -20,12 +20,12 @@ public class SqlDataAdapterDataLoader : IDataLoader
         _options = options;
     }
 
-    public Task LoadAsync(Source source, DataTable table, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+    public Task LoadAsync(Source source, DataTable table, DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken = default)
     {
         var command = new SqlCommand
         {
             Connection = (SqlConnection)connection,
-            Transaction = (SqlTransaction)transaction,
+            Transaction = (SqlTransaction?)transaction,
             CommandTimeout = _options.CommandTimeout
         };
 

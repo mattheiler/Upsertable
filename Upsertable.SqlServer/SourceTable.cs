@@ -30,9 +30,10 @@ public class SourceTable
         await _source.DropTableAsync();
     }
 
-    public async Task LoadAsync(IEnumerable entities, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+    public async Task LoadAsync(IEnumerable entities, DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken = default)
     {
-        await _loaders.LoadAsync(_source, CreateDataTable(_source, entities), connection, transaction, cancellationToken);
+        var table = CreateDataTable(_source, entities);
+        await _loaders.LoadAsync(_source, table, connection, transaction, cancellationToken);
     }
 
 
@@ -66,7 +67,7 @@ public class SourceTable
                         row[property.GetColumnNameInTable()] = GetData(property, entity);
                         break;
                     case INavigation navigation:
-                        var value = navigation.GetGetter().GetClrValue(entity);
+                        var value = navigation.GetGetter().GetClrValue(entity) ?? throw new InvalidOperationException("Entity must not be null");
                         foreach (var property in navigation.TargetEntityType.GetProperties().Where(property => !property.IsPrimaryKey()))
                             row[property.GetColumnNameInTable()] = GetData(property, value);
                         break;
@@ -101,7 +102,7 @@ public class SourceTable
             ?? property.ClrType;
     }
 
-    private object GetData(IProperty property, object entity)
+    private object? GetData(IProperty property, object entity)
     {
         var value = property.GetGetter().GetClrValue(entity);
 

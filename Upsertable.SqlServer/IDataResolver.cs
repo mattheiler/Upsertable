@@ -7,7 +7,7 @@ public interface IDataResolver
 {
     Type Type { get; }
 
-    object ResolveData(IProperty property, object value);
+    object? ResolveData(IProperty property, object? value);
 
     Type ResolveDataType(IProperty property);
 }

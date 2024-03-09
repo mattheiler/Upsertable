@@ -9,31 +9,26 @@ using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
-public class Output
+public class Output(DbContext db, IEnumerable<IProperty> properties)
 {
-    private readonly DbContext _db;
-    private readonly IList<IProperty> _properties;
+    private readonly IList<IProperty> _properties = properties.ToList();
     private readonly string _table = "#OUTPUT_" + Guid.NewGuid().ToString().Replace('-', '_');
-
-    public Output(DbContext db, IEnumerable<IProperty> properties)
-    {
-        _db = db;
-        _properties = properties.ToList();
-    }
 
     public async Task<OutputTable> CreateTableAsync(CancellationToken cancellationToken = default)
     {
         var columns = GetProperties().Select(property => $"{property.GetColumnNameInTable()} {property.GetColumnType()}");
         var command = $"CREATE TABLE [{GetTableName()}] ({string.Join(", ", columns)})";
 
-        await _db.Database.ExecuteSqlRawAsync(command, cancellationToken);
+        await db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
         return new OutputTable(this);
     }
 
     public async Task DropTableAsync()
     {
-        await _db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
+#pragma warning disable EF1002
+        await db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
+#pragma warning restore EF1002
     }
 
     public IEnumerable<IProperty> GetProperties()

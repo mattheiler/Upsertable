@@ -1,19 +1,14 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.Data;
 
 namespace Upsertable.SqlServer;
 
-public class MergeBuilder<T> : MergeBuilder where T : class
+public class MergeBuilder<T>(DbContext db, Func<IEnumerable> provider) : MergeBuilder(db.Model.FindEntityType(typeof(T)) ?? throw new ArgumentException("Entity type not found."), db, provider) where T : class
 {
-    public MergeBuilder(DbContext db, IEntityType entityType, EntityProviderFunc provider)
-        : base(db, entityType, provider)
-    {
-    }
-
     public MergeBuilder<T> Merge<TProperty>(Expression<Func<T, TProperty>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
     {
         return (MergeBuilder<T>)base.Merge(property, build);

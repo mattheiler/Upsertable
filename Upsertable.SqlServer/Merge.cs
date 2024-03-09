@@ -11,28 +11,13 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
-using Upsertable.Data;
 using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
-public class Merge : IMerge
+public class Merge(DbContext db, Source source, IEntityType target, Output output, Func<IEnumerable> provider)
+    : IMerge
 {
-    private readonly DbContext _db;
-    private readonly Output _output;
-    private readonly EntityProviderFunc _provider;
-    private readonly Source _source;
-    private readonly IEntityType _target;
-
-    public Merge(DbContext db, IEntityType target, Source source, Output output, EntityProviderFunc provider)
-    {
-        _db = db;
-        _target = target;
-        _source = source;
-        _output = output;
-        _provider = provider;
-    }
-
     public List<IProperty> On { get; set; } = new();
 
     public List<IPropertyBase> Insert { get; } = new();
@@ -49,28 +34,26 @@ public class Merge : IMerge
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        var connection = _db.Database.GetDbConnection();
-        var transaction = _db.Database.CurrentTransaction?.GetDbTransaction();
+        var connection = db.Database.GetDbConnection();
+        var transaction = db.Database.CurrentTransaction?.GetDbTransaction();
         if (connection.State == ConnectionState.Closed)
             await connection.OpenAsync(cancellationToken);
 
-        var entities = _provider().Cast<object>().ToList();
+        var entities = provider().Cast<object>().ToList();
 
-        await PreProcessAsync(entities, connection, transaction, cancellationToken);
+        await PreProcessAsync(entities);
 
-        await using var source = await _source.CreateTableAsync(cancellationToken);
-        await using var output = await _output.CreateTableAsync(cancellationToken);
+        await using var source1 = await source.CreateTableAsync(cancellationToken);
+        await using var output1 = await output.CreateTableAsync(cancellationToken);
 
-        await source.LoadAsync(entities, connection, transaction, cancellationToken);
+        await source1.LoadAsync(entities, connection, transaction, cancellationToken);
 
-        if (!IsReadOnly)
-            await ProcessAsync(cancellationToken);
+        if (!IsReadOnly) await ProcessAsync(cancellationToken);
 
         await PostProcessAsync(entities, connection, transaction, cancellationToken);
     }
 
-
-    protected Task PreProcessAsync(IEnumerable<object> entities, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+    protected Task PreProcessAsync(IEnumerable<object> entities)
     {
         foreach (var entity in entities)
         foreach (var navigation in Principals)
@@ -85,22 +68,22 @@ public class Merge : IMerge
 
     protected async Task ProcessAsync(CancellationToken cancellationToken = default)
     {
-        await _db.Database.ExecuteSqlRawAsync(ToSql(), cancellationToken);
+        await db.Database.ExecuteSqlRawAsync(ToSql(), cancellationToken);
     }
 
-    protected async Task PostProcessAsync(IEnumerable<object> entities, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+    protected async Task PostProcessAsync(IEnumerable<object> entities, DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken = default)
     {
-        var properties = On.Union(_target.GetKeys().SelectMany(key => key.Properties).Distinct()).ToList();
-        var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnNameInTable()}]"))} FROM [{_output.GetTableName()}]";
+        var properties = On.Union(target.GetKeys().SelectMany(key => key.Properties).Distinct()).ToList();
+        var statement = $"SELECT {string.Join(", ", properties.Select(property => $"[{property.GetColumnNameInTable()}]"))} FROM [{output.GetTableName()}]";
 
-        await using var command = new SqlCommand(statement, (SqlConnection)connection, (SqlTransaction)transaction);
+        await using var command = new SqlCommand(statement, (SqlConnection)connection, (SqlTransaction?)transaction);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         if (!reader.HasRows)
             return;
 
         var lookup = entities.ToDictionary(On.GetValues, EntityEqualityComparer.Default);
-        var values = new object[properties.Count];
+        var values = new object?[properties.Count];
 
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -154,8 +137,8 @@ public class Merge : IMerge
             .AppendLine(";");
 
         command
-            .AppendLine($"MERGE [{_target.GetTableName()}] AS [T]")
-            .AppendLine($"USING [{_source.GetTableName()}] AS [S]");
+            .AppendLine($"MERGE [{target.GetTableName()}] AS [T]")
+            .AppendLine($"USING [{source.GetTableName()}] AS [S]");
 
         var on = On.Select(property => property.GetColumnNameInTable()).Select(column => $"[T].[{column}] = [S].[{column}]");
 
@@ -179,15 +162,15 @@ public class Merge : IMerge
             command.AppendLine($"WHEN NOT MATCHED BY TARGET THEN INSERT ({string.Join(", ", columns)}) VALUES ({string.Join(", ", columns.Select(column => $"[S].[{column}]"))})");
         }
 
-        var output =
-            _output
+        var output1 =
+            output
                 .GetProperties()
-                .Union(_target.GetKeys().SelectMany(key => key.Properties).Distinct())
+                .Union(target.GetKeys().SelectMany(key => key.Properties).Distinct())
                 .Select(property => property.GetColumnNameInTable())
                 .Select(column => $"INSERTED.[{column}] AS [{column}]");
 
         command
-            .AppendLine($"OUTPUT {string.Join(", ", output)} INTO [{_output.GetTableName()}]")
+            .AppendLine($"OUTPUT {string.Join(", ", output1)} INTO [{output.GetTableName()}]")
             .AppendLine(";");
 
         return command.ToString();
@@ -248,7 +231,7 @@ public class Merge : IMerge
         return ToSql();
     }
 
-    private class EntityEqualityComparer : EqualityComparer<IEnumerable<object>>
+    private class EntityEqualityComparer : EqualityComparer<IEnumerable<object?>>
     {
         public new static readonly EntityEqualityComparer Default = new();
 
@@ -256,7 +239,7 @@ public class Merge : IMerge
         {
         }
 
-        public override bool Equals(IEnumerable<object> x, IEnumerable<object> y)
+        public override bool Equals(IEnumerable<object?>? x, IEnumerable<object?>? y)
         {
             if (x == null && y == null)
                 return true;
@@ -265,7 +248,7 @@ public class Merge : IMerge
             return x.SequenceEqual(y);
         }
 
-        public override int GetHashCode(IEnumerable<object> obj)
+        public override int GetHashCode(IEnumerable<object?> obj)
         {
             return obj.Aggregate(0, HashCode.Combine);
         }

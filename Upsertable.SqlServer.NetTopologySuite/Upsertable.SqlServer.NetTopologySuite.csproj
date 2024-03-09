@@ -7,6 +7,7 @@
 		<Authors>Matt Heiler</Authors>
 		<RepositoryUrl>https://github.com/mattheiler/Upsertable</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
+    <Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>

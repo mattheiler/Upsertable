@@ -22,9 +22,9 @@ public class SqlServerGeometryDataResolver<TGeometry> : IDataResolver
 
     public Type Type => typeof(TGeometry);
 
-    public object ResolveData(IProperty property, object value)
+    public object? ResolveData(IProperty property, object? value)
     {
-        return value != null ? _converter.ConvertToProvider(value) : SqlBytes.Null;
+        return value == null ? SqlBytes.Null : _converter.ConvertToProvider(value);
     }
 
     public Type ResolveDataType(IProperty property)

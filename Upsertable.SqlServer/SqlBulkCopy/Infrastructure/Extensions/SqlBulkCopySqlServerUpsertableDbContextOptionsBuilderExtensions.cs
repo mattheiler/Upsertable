@@ -5,7 +5,7 @@ namespace Upsertable.SqlServer.SqlBulkCopy.Infrastructure.Extensions;
 
 public static class SqlBulkCopySqlServerUpsertableDbContextOptionsBuilderExtensions
 {
-    public static SqlServerUpsertableDbContextOptionsBuilder UseSqlBulkCopy(this SqlServerUpsertableDbContextOptionsBuilder @this, Action<SqlBulkCopyDataLoaderOptions> configure = default)
+    public static SqlServerUpsertableDbContextOptionsBuilder UseSqlBulkCopy(this SqlServerUpsertableDbContextOptionsBuilder @this, Action<SqlBulkCopyDataLoaderOptions>? configure = default)
     {
         return @this.SourceLoader(_ =>
         {

@@ -4,7 +4,7 @@ namespace Upsertable.SqlServer.SqlBulkCopy.Extensions;
 
 public static class SqlBulkCopySqlServerMergeBuilderExtensions
 {
-    public static MergeBuilder<T> UsingSqlBulkCopy<T>(this MergeBuilder<T> @this, Action<SqlBulkCopyDataLoaderOptions> configure = default) where T : class
+    public static MergeBuilder<T> UsingSqlBulkCopy<T>(this MergeBuilder<T> @this, Action<SqlBulkCopyDataLoaderOptions>? configure = default) where T : class
     {
         var options = new SqlBulkCopyDataLoaderOptions();
         configure?.Invoke(options);

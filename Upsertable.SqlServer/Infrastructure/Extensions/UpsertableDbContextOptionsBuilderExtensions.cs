@@ -10,7 +10,7 @@ public static class UpsertableDbContextOptionsBuilderExtensions
         return @this.UseUpsertable(merge => merge.SourceLoader(loader));
     }
 
-    public static SqlServerDbContextOptionsBuilder UseUpsertable(this SqlServerDbContextOptionsBuilder @this, Action<SqlServerUpsertableDbContextOptionsBuilder> configure = default)
+    public static SqlServerDbContextOptionsBuilder UseUpsertable(this SqlServerDbContextOptionsBuilder @this, Action<SqlServerUpsertableDbContextOptionsBuilder>? configure = default)
     {
         var builder = ((IRelationalDbContextOptionsBuilderInfrastructure)@this).OptionsBuilder;
         var extension = builder.Options.FindExtension<SqlServerUpsertableDbContextOptionsExtension>() ?? new SqlServerUpsertableDbContextOptionsExtension();

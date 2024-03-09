@@ -51,7 +51,9 @@ public class Source
 
     public async Task DropTableAsync()
     {
+#pragma warning disable EF1002
         await _db.Database.ExecuteSqlRawAsync($"DROP TABLE {GetTableName()}");
+#pragma warning restore EF1002
     }
 
     public IEnumerable<IPropertyBase> GetProperties()

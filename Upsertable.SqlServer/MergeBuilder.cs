@@ -1,37 +1,33 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Upsertable.Data;
+using Microsoft.EntityFrameworkCore.Storage;
+using Upsertable.Extensions;
 
 namespace Upsertable.SqlServer;
 
-public class MergeBuilder
+public class MergeBuilder(IEntityType type, DbContext db, Func<IEnumerable> provider)
 {
-    private readonly List<IMerge> _after = new();
-    private readonly List<IMerge> _before = new();
-    private readonly DbContext _db;
-    private readonly List<INavigation> _dependents = new();
-    private readonly EntityProviderFunc _provider;
-    private readonly List<INavigation> _principals = new();
+    private readonly List<IMerge> _after = [];
+    private readonly List<IMerge> _before = [];
+    private readonly List<INavigation> _dependents = [];
+    private readonly List<INavigation> _principals = [];
     private MergeBehavior _behavior;
-    private IReadOnlyCollection<IPropertyBase> _insert;
-    private IDataLoader _loader;
-    private IReadOnlyCollection<IProperty> _on;
+    private IReadOnlyCollection<IPropertyBase>? _insert;
+    private IDataLoader? _loader;
+    private IReadOnlyCollection<IProperty>? _on;
     private bool _readonly;
-    private IReadOnlyCollection<IPropertyBase> _update;
+    private IReadOnlyCollection<IPropertyBase>? _update;
 
-    public MergeBuilder(DbContext db, IEntityType entityType, EntityProviderFunc provider)
-    {
-        _db = db;
-        EntityType = entityType;
-        _provider = provider;
-    }
-
-    internal IEntityType EntityType { get; }
+    internal IEntityType EntityType => type;
 
     public MergeBuilder AsReadOnly(bool @readonly = true)
     {
@@ -93,26 +89,81 @@ public class MergeBuilder
         return this;
     }
 
+    public Task ExecuteAsync(CancellationToken cancellation = default)
+    {
+        return ToMerge().ExecuteAsync(cancellation);
+    }
+
     protected MergeBuilder Merge<TProperty>(LambdaExpression property, Action<MergeBuilder<TProperty>> build) where TProperty : class
     {
-        var navigationBase = property.Body is MemberExpression body ? EntityType.FindNavigation(body.Member) ?? EntityType.FindSkipNavigation(body.Member) as INavigationBase : default;
-        if (navigationBase == null)
-            throw new ArgumentException("Expression body must describe a navigation property.");
+        var expression = property.Body as MemberExpression ?? throw new ArgumentException("Expression body must describe a field or property.");
+        var navigation = EntityType.FindNavigationBase(expression.Member) ?? throw new ArgumentException("Expression body must describe a navigation property.");
 
-        var builder = new MergeBuilder<TProperty>(_db, _db.Model.FindEntityType(typeof(TProperty)), EntityProvider.Lazy(navigationBase, _provider));
+        return Merge(navigation, build);
+    }
+
+    protected MergeBuilder Merge<TProperty>(INavigationBase property, Action<MergeBuilder<TProperty>> build) where TProperty : class
+    {
+        var builder = new MergeBuilder<TProperty>(db, () =>
+        {
+            var entities = new List<object>();
+
+            foreach (var source in provider())
+            {
+                var value = property.GetValue(source);
+                if (value == null) continue;
+
+                if (property.IsCollection)
+                    entities.AddRange(((ICollection)value).Cast<object>());
+                else
+                    entities.Add(value);
+            }
+
+            return entities.Distinct();
+        });
 
         build(builder);
 
-        switch (navigationBase)
+        switch (property)
         {
-            case ISkipNavigation skipNavigation:
+            case ISkipNavigation skip:
             {
+#pragma warning disable EF1001 // Internal EF Core API usage.
+                var source = db.GetDependencies().StateManager.EntityMaterializerSource;
+                var context = new MaterializationContext(default, db);
+#pragma warning restore EF1001 // Internal EF Core API usage.
+
                 var joins =
-                    new MergeBuilder(_db, skipNavigation.JoinEntityType, EntityProvider.Join(_db, skipNavigation, _provider))
+                    new MergeBuilder(skip.JoinEntityType, db, () =>
+                        {
+                            var entities = new List<object>();
+
+#pragma warning disable EF1001 // Internal EF Core API usage.
+                            var materializer = skip.JoinEntityType.GetOrCreateMaterializer(source);
+#pragma warning restore EF1001 // Internal EF Core API usage.
+
+                            foreach (var data in provider())
+                            {
+                                var accessor = skip.GetCollectionAccessor() ?? throw new InvalidOperationException("Navigation must be a collection.");
+                                var items = (IEnumerable)accessor.GetOrCreate(data, false);
+
+                                foreach (var item in items)
+                                {
+                                    var entity = materializer(context);
+
+                                    skip.ForeignKey.Properties.SetValues(entity, skip.ForeignKey.PrincipalKey.Properties.GetValues(data));
+                                    skip.Inverse.ForeignKey.Properties.SetValues(entity, skip.Inverse.ForeignKey.PrincipalKey.Properties.GetValues(item));
+
+                                    entities.Add(entity);
+                                }
+                            }
+
+                            return entities.Distinct();
+                        })
                         .WithBehavior(MergeBehavior.Insert)
                         .ToMerge();
 
-                return skipNavigation.IsOnDependent
+                return skip.IsOnDependent
                     ? MergeAfter(builder.MergeBefore(joins).ToMerge())
                     : MergeBefore(builder.ToMerge()).MergeBefore(joins);
             }
@@ -129,8 +180,8 @@ public class MergeBuilder
 
     public IMerge ToMerge()
     {
-        var resolvers = _db.GetService<IEnumerable<IDataResolver>>();
-        var loader = _loader ?? _db.GetService<IDataLoader>();
+        var resolvers = db.GetService<IEnumerable<IDataResolver>>();
+        var loader = _loader ?? db.GetService<IDataLoader>();
 
         var primary = EntityType.FindPrimaryKey() ?? throw new InvalidOperationException("Primary key must not be null.");
         var keys = primary.Properties;
@@ -142,12 +193,12 @@ public class MergeBuilder
             select navigation;
         var properties = EntityType.GetProperties().Concat<IPropertyBase>(navigations).ToList();
 
-        var source = new Source(_db, properties, loader, resolvers);
+        var source = new Source(db, properties, loader, resolvers);
         var on = _on ?? keys;
         var insert = _behavior.HasFlag(MergeBehavior.Insert) ? _insert ?? properties : default;
         var update = _behavior.HasFlag(MergeBehavior.Update) ? _update ?? properties : default;
-        var output = new Output(_db, on.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
-        var merge = new Merge(_db, EntityType, source, output, _provider) { Behavior = _behavior, IsReadOnly = _readonly };
+        var output = new Output(db, on.Union(EntityType.GetKeys().SelectMany(key => key.Properties).Distinct()));
+        var merge = new Merge(db, source, EntityType, output, provider) { Behavior = _behavior, IsReadOnly = _readonly };
 
         merge.On.AddRange(on);
 
@@ -158,7 +209,7 @@ public class MergeBuilder
         merge.Dependents.AddRange(_dependents);
 
         return
-            _before.Any() || _after.Any()
+            _before.Count > 0 || _after.Count > 0
                 ? new MergeComposite(_before.Append(merge).Concat(_after))
                 : merge;
     }
