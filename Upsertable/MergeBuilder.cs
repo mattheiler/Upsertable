@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -7,14 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
 using Upsertable.Internal.Extensions;
 
 namespace Upsertable;
 
-public class MergeBuilder(IEntityType type, DbContext db, Func<IEnumerable> provider)
+public class MergeBuilder(IEntityType type, DbContext db, EntityProviderFunc provider)
 {
     private readonly List<IMerge> _after = [];
     private readonly List<IMerge> _before = [];
@@ -104,23 +101,7 @@ public class MergeBuilder(IEntityType type, DbContext db, Func<IEnumerable> prov
 
     protected MergeBuilder Merge<TProperty>(INavigationBase property, Action<MergeBuilder<TProperty>> build) where TProperty : class
     {
-        var builder = new MergeBuilder<TProperty>(db, () =>
-        {
-            var entities = new List<object>();
-
-            foreach (var source in provider())
-            {
-                var value = property.GetValue(source);
-                if (value == null) continue;
-
-                if (property.IsCollection)
-                    entities.AddRange(((ICollection)value).Cast<object>());
-                else
-                    entities.Add(value);
-            }
-
-            return entities.Distinct();
-        });
+        var builder = new MergeBuilder<TProperty>(db, EntityProvider.Lazy(property, provider));
 
         build(builder);
 
@@ -128,38 +109,8 @@ public class MergeBuilder(IEntityType type, DbContext db, Func<IEnumerable> prov
         {
             case ISkipNavigation skip:
             {
-#pragma warning disable EF1001 // Internal EF Core API usage.
-                var source = db.GetDependencies().StateManager.EntityMaterializerSource;
-                var context = new MaterializationContext(default, db);
-#pragma warning restore EF1001 // Internal EF Core API usage.
-
                 var joins =
-                    new MergeBuilder(skip.JoinEntityType, db, () =>
-                        {
-                            var entities = new List<object>();
-
-#pragma warning disable EF1001 // Internal EF Core API usage.
-                            var materializer = skip.JoinEntityType.GetOrCreateMaterializer(source);
-#pragma warning restore EF1001 // Internal EF Core API usage.
-
-                            foreach (var data in provider())
-                            {
-                                var accessor = skip.GetCollectionAccessor() ?? throw new InvalidOperationException("Navigation must be a collection.");
-                                var items = (IEnumerable)accessor.GetOrCreate(data, false);
-
-                                foreach (var item in items)
-                                {
-                                    var entity = materializer(context);
-
-                                    skip.ForeignKey.Properties.SetValues(entity, skip.ForeignKey.PrincipalKey.Properties.GetValues(data));
-                                    skip.Inverse.ForeignKey.Properties.SetValues(entity, skip.Inverse.ForeignKey.PrincipalKey.Properties.GetValues(item));
-
-                                    entities.Add(entity);
-                                }
-                            }
-
-                            return entities.Distinct();
-                        })
+                    new MergeBuilder(skip.JoinEntityType, db, EntityProvider.Join(db, skip, provider))
                         .WithBehavior(MergeBehavior.Insert)
                         .ToMerge();
 

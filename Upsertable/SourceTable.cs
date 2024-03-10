@@ -12,28 +12,17 @@ using Upsertable.Internal.Extensions;
 
 namespace Upsertable;
 
-public class SourceTable
+public class SourceTable(Source source, IDataLoader loaders, IDictionary<Type, IDataResolver> resolvers)
 {
-    private readonly IDataLoader _loaders;
-    private readonly IDictionary<Type, IDataResolver> _resolvers;
-    private readonly Source _source;
-
-    public SourceTable(Source source, IDataLoader loaders, IEnumerable<IDataResolver> resolvers)
-    {
-        _source = source;
-        _loaders = loaders;
-        _resolvers = resolvers.ToDictionary(resolver => resolver.Type);
-    }
-
     public async ValueTask DisposeAsync()
     {
-        await _source.DropTableAsync();
+        await source.DropTableAsync();
     }
 
     public async Task LoadAsync(IEnumerable entities, DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken = default)
     {
-        var table = CreateDataTable(_source, entities);
-        await _loaders.LoadAsync(_source, table, connection, transaction, cancellationToken);
+        var table = CreateDataTable(source, entities);
+        await loaders.LoadAsync(source, table, connection, transaction, cancellationToken);
     }
 
 
@@ -93,7 +82,7 @@ public class SourceTable
 
     private Type GetDataType(IProperty property)
     {
-        if (_resolvers.TryGetValue(property.ClrType, out var resolver))
+        if (resolvers.TryGetValue(property.ClrType, out var resolver))
             return resolver.ResolveDataType(property);
 
         return
@@ -106,7 +95,7 @@ public class SourceTable
     {
         var value = property.GetGetter().GetClrValue(entity);
 
-        if (_resolvers.TryGetValue(property.ClrType, out var resolver))
+        if (resolvers.TryGetValue(property.ClrType, out var resolver))
             return resolver.ResolveData(property, value);
 
         var converter = property.GetValueConverter();

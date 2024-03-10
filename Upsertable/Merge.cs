@@ -15,8 +15,7 @@ using Upsertable.Internal.Extensions;
 
 namespace Upsertable;
 
-public class Merge(DbContext db, Source source, IEntityType target, Output output, Func<IEnumerable> provider)
-    : IMerge
+public class Merge(DbContext db, Source source, IEntityType target, Output output, EntityProviderFunc provider) : IMerge
 {
     public List<IProperty> On { get; set; } = [];
 
@@ -43,10 +42,10 @@ public class Merge(DbContext db, Source source, IEntityType target, Output outpu
 
         await PreProcessAsync(entities);
 
-        await using var source1 = await source.CreateTableAsync(cancellationToken);
-        await using var output1 = await output.CreateTableAsync(cancellationToken);
+        await using var sourceTable = await source.CreateTableAsync(cancellationToken);
+        await using var outputTable = await output.CreateTableAsync(cancellationToken);
 
-        await source1.LoadAsync(entities, connection, transaction, cancellationToken);
+        await sourceTable.LoadAsync(entities, connection, transaction, cancellationToken);
 
         if (!IsReadOnly) await ProcessAsync(cancellationToken);
 
@@ -146,9 +145,9 @@ public class Merge(DbContext db, Source source, IEntityType target, Output outpu
 
         if (Behavior.HasFlag(MergeBehavior.Update))
         {
-            var columns = GetColumnsForUpdate();
+            var updateColumns = GetColumnsForUpdate();
 
-            command.AppendLine($"WHEN MATCHED THEN UPDATE SET {string.Join(", ", columns.Select(column => $"[T].[{column}] = [S].[{column}]"))}");
+            command.AppendLine($"WHEN MATCHED THEN UPDATE SET {string.Join(", ", updateColumns.Select(column => $"[T].[{column}] = [S].[{column}]"))}");
         }
         else
         {
@@ -157,12 +156,12 @@ public class Merge(DbContext db, Source source, IEntityType target, Output outpu
 
         if (Behavior.HasFlag(MergeBehavior.Insert))
         {
-            var columns = GetColumnsForInsert().ToList();
+            var insertColumns = GetColumnsForInsert().ToList();
 
-            command.AppendLine($"WHEN NOT MATCHED BY TARGET THEN INSERT ({string.Join(", ", columns)}) VALUES ({string.Join(", ", columns.Select(column => $"[S].[{column}]"))})");
+            command.AppendLine($"WHEN NOT MATCHED BY TARGET THEN INSERT ({string.Join(", ", insertColumns)}) VALUES ({string.Join(", ", insertColumns.Select(column => $"[S].[{column}]"))})");
         }
 
-        var output1 =
+        var outputColumns =
             output
                 .GetProperties()
                 .Union(target.GetKeys().SelectMany(key => key.Properties).Distinct())
@@ -170,7 +169,7 @@ public class Merge(DbContext db, Source source, IEntityType target, Output outpu
                 .Select(column => $"INSERTED.[{column}] AS [{column}]");
 
         command
-            .AppendLine($"OUTPUT {string.Join(", ", output1)} INTO [{output.GetTableName()}]")
+            .AppendLine($"OUTPUT {string.Join(", ", outputColumns)} INTO [{output.GetTableName()}]")
             .AppendLine(";");
 
         return command.ToString();

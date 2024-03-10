@@ -8,12 +8,12 @@ using NetTopologySuite.IO;
 
 namespace Upsertable.NetTopologySuite.Data;
 
-public class SqlServerGeometryDataResolver<TGeometry> : IDataResolver
+public class GeometryDataResolver<TGeometry> : IDataResolver
     where TGeometry : Geometry
 {
     private readonly ValueConverter _converter;
 
-    public SqlServerGeometryDataResolver()
+    public GeometryDataResolver()
     {
 #pragma warning disable EF1001 // Internal EF Core API usage.
         _converter = new GeometryValueConverter<TGeometry>(new SqlServerBytesReader(), new SqlServerBytesWriter());

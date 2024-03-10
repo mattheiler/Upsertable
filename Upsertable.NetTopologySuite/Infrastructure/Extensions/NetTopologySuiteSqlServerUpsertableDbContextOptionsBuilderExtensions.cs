@@ -8,6 +8,6 @@ public static class NetTopologySuiteSqlServerUpsertableDbContextOptionsBuilderEx
 {
     public static SqlServerUpsertableDbContextOptionsBuilder UseNetTopologySuite(this SqlServerUpsertableDbContextOptionsBuilder @this)
     {
-        return @this.DataResolver(_ => new SqlServerGeometryDataResolver<Geometry>());
+        return @this.DataResolver(_ => new GeometryDataResolver<Geometry>());
     }
 }

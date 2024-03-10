@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Upsertable;
 
-public class MergeBuilder<T>(DbContext db, Func<IEnumerable> provider) : MergeBuilder(db.Model.FindEntityType(typeof(T)) ?? throw new ArgumentException("Entity type not found."), db, provider) where T : class
+public class MergeBuilder<T>(DbContext db, EntityProviderFunc provider) : MergeBuilder(db.Model.FindEntityType(typeof(T)) ?? throw new ArgumentException("Entity type not found."), db, provider) where T : class
 {
     public MergeBuilder<T> Merge<TProperty>(Expression<Func<T, TProperty>> property, Action<MergeBuilder<TProperty>> build) where TProperty : class
     {

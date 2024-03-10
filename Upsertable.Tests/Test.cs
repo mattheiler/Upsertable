@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,7 @@ using Upsertable.SqlBulkCopy.Infrastructure.Extensions;
 using Upsertable.SqlDataAdapter.Extensions;
 using Upsertable.Tests.Entities;
 using Xunit;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Upsertable.Tests;
 
@@ -18,7 +20,7 @@ public class Test
     {
         var services = new ServiceCollection();
 
-        services.AddDbContext<TestDbContext>(db => db.UseSqlServer("Server=.,61805;Database=Test;User Id=SA;Password=YourStrong@Passw0rd;TrustServerCertificate=True;Encrypt=False", sql => sql.UseUpsertable(merge => SqlBulkCopySqlServerUpsertableDbContextOptionsBuilderExtensions.UseSqlBulkCopy(merge))));
+        services.AddDbContext<TestDbContext>(db => db.UseSqlServer("Server=.,61805;Database=Test;User Id=SA;Password=YourStrong@Passw0rd;TrustServerCertificate=True;Encrypt=False", sql => sql.UseUpsertable(merge => merge.UseSqlBulkCopy())));
 
         var provider = services.BuildServiceProvider();
         var context = provider.GetService<TestDbContext>();
@@ -29,52 +31,24 @@ public class Test
     [Fact]
     public async Task Test1()
     {
-        var foos = new[]
+        var sample = new Foo
         {
-            new Foo
+            Code = Guid.NewGuid().ToString(),
+            Fubs =
             {
-                Code = Guid.NewGuid().ToString(),
-                Fubs =
+                new Fub
                 {
-                    new Fub
+                    Baz = new Baz
                     {
-                        Baz = new Baz
+                        Code = Guid.NewGuid().ToString(),
+                        Qux = new Qux
                         {
                             Code = Guid.NewGuid().ToString(),
-                            Qux = new Qux
+                            Fums =
                             {
-                                Code = Guid.NewGuid().ToString(),
-                                Fums =
+                                new Fum
                                 {
-                                    new Fum
-                                    {
-                                        Code = Guid.NewGuid().ToString()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            new Foo
-            {
-                Code = Guid.NewGuid().ToString(),
-                Fubs =
-                {
-                    new Fub
-                    {
-                        Baz = new Baz
-                        {
-                            Code = Guid.NewGuid().ToString(),
-                            Qux = new Qux
-                            {
-                                Code = Guid.NewGuid().ToString(),
-                                Fums =
-                                {
-                                    new Fum
-                                    {
-                                        Code = Guid.NewGuid().ToString()
-                                    }
+                                    Code = Guid.NewGuid().ToString()
                                 }
                             }
                         }
@@ -83,8 +57,11 @@ public class Test
             }
         };
 
+        await _context.Foos.AddAsync(sample);
+        await _context.SaveChangesAsync();
+
         var statement = _context
-            .Merge(foos)
+            .Merge([sample])
             .On(foo => foo.Code)
             .Insert()
             .Update(foo => foo.Name)
@@ -126,10 +103,18 @@ public class Test
                     });
             })
             .ToMerge();
-
+        
         await statement.ExecuteAsync();
-        await statement.ExecuteAsync();
 
-        Assert.True(true);
+        var result = await _context.Foos
+            .Include(foo => foo.Fubs).ThenInclude(fub => fub.Baz).ThenInclude(baz => baz.Qux).ThenInclude(qux => qux.Fums)
+            .SingleAsync(foo => foo.Id == sample.Id);
+
+        Assert.Equal(sample.Code, result.Code);
+        Assert.Single(result.Fubs);
+        Assert.Equal(sample.Fubs.ElementAt(0).Baz.Code, result.Fubs.ElementAt(0).Baz.Code);
+        Assert.Equal(sample.Fubs.ElementAt(0).Baz.Qux.Code, result.Fubs.ElementAt(0).Baz.Qux.Code);
+        Assert.Single(result.Fubs.ElementAt(0).Baz.Qux.Fums);
+        Assert.Equal(sample.Fubs.ElementAt(0).Baz.Qux.Fums.ElementAt(0).Code, result.Fubs.ElementAt(0).Baz.Qux.Fums.ElementAt(0).Code);
     }
 }

@@ -12,7 +12,7 @@ public static class MergeBuilderExtensions
 {
     public static MergeBuilder<T> Merge<T>(this DbContext @this, IEnumerable<T> entities) where T : class
     {
-        return new MergeBuilder<T>(@this, entities.Distinct);
+        return new MergeBuilder<T>(@this, EntityProvider.List(entities));
     }
 
     public static MergeBuilder<T> Insert<T>(this MergeBuilder<T> @this) where T : class

@@ -35,7 +35,7 @@ public class Source(DbContext db, IEnumerable<IPropertyBase> properties, IDataLo
 
         await db.Database.ExecuteSqlRawAsync(command, cancellationToken);
 
-        return new SourceTable(this, loader, resolvers);
+        return new SourceTable(this, loader, resolvers.ToDictionary(resolver => resolver.Type));
     }
 
     public async Task DropTableAsync()
