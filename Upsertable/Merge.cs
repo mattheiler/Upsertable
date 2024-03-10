@@ -184,7 +184,7 @@ public class Merge(DbContext db, Source source, IEntityType target, Output outpu
     {
         return member switch
         {
-            IProperty property => GetColumnsForUpdate(new[] { property }),
+            IProperty property => GetColumnsForUpdate([property]),
             INavigation navigation => GetColumnsForUpdate(navigation.TargetEntityType.GetProperties()),
             _ => throw new NotSupportedException("Property or navigation type not supported.")
         };
@@ -209,7 +209,7 @@ public class Merge(DbContext db, Source source, IEntityType target, Output outpu
     {
         return member switch
         {
-            IProperty property => GetColumnsForInsert(new[] { property }),
+            IProperty property => GetColumnsForInsert([property]),
             INavigation navigation => GetColumnsForInsert(navigation.TargetEntityType.GetProperties()),
             _ => throw new NotSupportedException("Property or navigation type not supported.")
         };
