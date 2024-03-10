@@ -46,7 +46,10 @@ public class Test
                                 Code = Guid.NewGuid().ToString(),
                                 Fums =
                                 {
-                                    new Fum()
+                                    new Fum
+                                    {
+                                        Code = Guid.NewGuid().ToString()
+                                    }
                                 }
                             }
                         }
