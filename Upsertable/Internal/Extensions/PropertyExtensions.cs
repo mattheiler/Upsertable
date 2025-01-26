@@ -30,7 +30,7 @@ internal static class PropertyExtensions
 
     public static void SetValue(this IPropertyBase property, object obj, object? value)
     {
-        var info = property.PropertyInfo ?? throw new InvalidOperationException("Property must not be a shadow property or mapped directly to a field.");
+        var info = property.PropertyInfo ?? throw new InvalidOperationException($"Property '{property.Name}' must not be a shadow property or mapped directly to a field.");
         if (property.IsIndexerProperty())
             info.SetValue(obj, value, [property.Name]);
         else
